@@ -51,30 +51,35 @@ def create_model(model_name: str, config: dict):
     """สร้างโมเดลตามชื่อ"""
     num_classes = config["num_classes"]
     seg_config = config["segmentation"]
+    in_channels = 4 if config["data"].get("use_nir", False) else 3
 
     if model_name == "deeplabv3":
         model = create_deeplabv3(
             encoder_name=seg_config["deeplabv3"]["encoder"],
             encoder_weights="imagenet" if seg_config["deeplabv3"]["pretrained"] else None,
             num_classes=num_classes,
+            in_channels=in_channels,
         )
     elif model_name == "unet":
         model = create_unet(
             encoder_name=seg_config["unet"]["encoder"],
             encoder_weights="imagenet" if seg_config["unet"]["pretrained"] else None,
             num_classes=num_classes,
+            in_channels=in_channels,
         )
     elif model_name == "unetpp":
         model = create_unetpp(
             encoder_name=seg_config["unet"]["encoder"],
             encoder_weights="imagenet" if seg_config["unet"]["pretrained"] else None,
             num_classes=num_classes,
+            in_channels=in_channels,
         )
     elif model_name == "hrnet":
         model = create_hrnet(
             encoder_name=seg_config["hrnet"]["encoder"],
             encoder_weights="imagenet" if seg_config["hrnet"]["pretrained"] else None,
             num_classes=num_classes,
+            in_channels=in_channels,
         )
     else:
         raise ValueError(
@@ -344,6 +349,8 @@ if __name__ == "__main__":
                         help="Batch size (override config)")
     parser.add_argument("--lr", type=float, default=None,
                         help="Learning rate (override config)")
+    parser.add_argument("--use-nir", action="store_true",
+                        help="ใช้ NIR band (4 channels: RGBNIR)")
 
     args = parser.parse_args()
 
@@ -358,6 +365,8 @@ if __name__ == "__main__":
         config["segmentation"]["batch_size"] = args.batch_size
     if args.lr:
         config["segmentation"]["learning_rate"] = args.lr
+    if args.use_nir:
+        config["data"]["use_nir"] = True
 
     # เทรน
     train(

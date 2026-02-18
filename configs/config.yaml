@@ -15,10 +15,14 @@ data:
   tiles_dir: "data/tiles"
   labels_dir: "data/labels"
   yolo_labels_dir: "data/yolo_labels"
-  falsecolor_tiles_dir: "data/tiles/data_falsecolor"
+  falsecolor_tiles_dir: "data_falsecolor/tiles"
+  falsecolor_labels_dir: "data_falsecolor/labels"
 
   # ลำดับ bands ในไฟล์ GeoTIFF (THEOS: R=1, G=2, B=3, NIR=4)
   band_order: ["red", "green", "blue", "nir"]
+
+  # ใช้ NIR band เป็น input ช่องที่ 4 (RGBNIR = 4 channels)
+  use_nir: true
 
   # ขนาด tile
   tile_size: 512        # ขนาดพิกเซลของแต่ละ tile (512x512)

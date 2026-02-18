@@ -103,7 +103,7 @@ class SegmentationDataset(Dataset):
         return image, mask
 
 
-def get_train_transform(img_size=512):
+def get_train_transform(img_size=512, use_nir=False):
     """Augmentation สำหรับ training"""
     return A.Compose([
         A.RandomCrop(width=img_size, height=img_size, p=1.0),
@@ -120,16 +120,22 @@ def get_train_transform(img_size=512):
             A.GaussNoise(var_limit=(10, 50), p=1),
             A.GaussianBlur(blur_limit=(3, 5), p=1),
         ], p=0.3),
-        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        A.Normalize(
+            mean=[0.485, 0.456, 0.406] if not use_nir else [0.485, 0.456, 0.406, 0.5],
+            std=[0.229, 0.224, 0.225] if not use_nir else [0.229, 0.224, 0.225, 0.25],
+        ),
         ToTensorV2(),
     ])
 
 
-def get_val_transform(img_size=512):
+def get_val_transform(img_size=512, use_nir=False):
     """Augmentation สำหรับ validation (ไม่มี random transform)"""
     return A.Compose([
         A.CenterCrop(width=img_size, height=img_size, p=1.0),
-        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        A.Normalize(
+            mean=[0.485, 0.456, 0.406] if not use_nir else [0.485, 0.456, 0.406, 0.5],
+            std=[0.229, 0.224, 0.225] if not use_nir else [0.229, 0.224, 0.225, 0.25],
+        ),
         ToTensorV2(),
     ])
 
@@ -143,6 +149,7 @@ def create_dataloaders(config: dict):
     tile_size = config["data"]["tile_size"]
     batch_size = config["segmentation"]["batch_size"]
     num_classes = config["num_classes"]
+    use_nir = config["data"].get("use_nir", False)
 
     # โหลด splits
     splits_path = os.path.join(tiles_dir, "splits.json")
@@ -158,13 +165,17 @@ def create_dataloaders(config: dict):
         splits = {"train": all_files,
                   "val": all_files[:10], "test": all_files[:10]}
 
+    if use_nir:
+        print("   NIR band enabled (4-channel input: RGBNIR)")
+
     # สร้าง datasets
     train_dataset = SegmentationDataset(
         tiles_dir=tiles_dir,
         labels_dir=labels_dir,
         file_list=splits["train"],
         num_classes=num_classes,
-        transform=get_train_transform(tile_size),
+        transform=get_train_transform(tile_size, use_nir=use_nir),
+        use_nir=use_nir,
     )
 
     val_dataset = SegmentationDataset(
@@ -172,7 +183,8 @@ def create_dataloaders(config: dict):
         labels_dir=labels_dir,
         file_list=splits["val"],
         num_classes=num_classes,
-        transform=get_val_transform(tile_size),
+        transform=get_val_transform(tile_size, use_nir=use_nir),
+        use_nir=use_nir,
     )
 
     test_dataset = SegmentationDataset(
@@ -180,7 +192,8 @@ def create_dataloaders(config: dict):
         labels_dir=labels_dir,
         file_list=splits["test"],
         num_classes=num_classes,
-        transform=get_val_transform(tile_size),
+        transform=get_val_transform(tile_size, use_nir=use_nir),
+        use_nir=use_nir,
     )
 
     # สร้าง DataLoaders

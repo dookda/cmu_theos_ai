@@ -237,7 +237,7 @@ if __name__ == "__main__":
                         help="พาธไปยังไฟล์ config")
     parser.add_argument("--tif", type=str, default=None,
                         help="พาธไปยังไฟล์ GeoTIFF (override config)")
-    parser.add_argument("--output", type=str, default="data/tiles/data_falsecolor",
+    parser.add_argument("--output", type=str, default="data_falsecolor/tiles",
                         help="โฟลเดอร์เก็บ tiles")
     parser.add_argument("--tile-size", type=int, default=512,
                         help="ขนาด tile")
