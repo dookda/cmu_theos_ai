@@ -1,0 +1,18 @@
+services:
+  labeler:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../data/tiles:/data/tiles:ro
+      - ../data/labels:/data/labels
+      - ../configs:/data/configs:ro
+      - ./embeddings:/data/embeddings
+      # If Dockerfile download fails, uncomment and place mobile_sam.pt in ./checkpoints/
+      # - ./checkpoints:/app/checkpoints:ro
+    environment:
+      - TILES_DIR=/data/tiles
+      - LABELS_DIR=/data/labels
+      - EMBEDDINGS_DIR=/data/embeddings
+      - CONFIG_PATH=/data/configs/config.yaml
+      - CHECKPOINT_PATH=/app/checkpoints/mobile_sam.pt

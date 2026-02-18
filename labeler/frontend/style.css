@@ -1,0 +1,148 @@
+/* Minimal CSS — DaisyUI pastel theme handles most styling */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===== Class buttons (rendered dynamically by JS) ===== */
+.class-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 2px solid transparent;
+    border-radius: var(--rounded-btn, 0.5rem);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+}
+
+.class-btn:hover {
+    background: oklch(var(--b2));
+}
+
+.class-btn.active {
+    border-color: oklch(var(--p));
+    background: oklch(var(--b2));
+    font-weight: 600;
+}
+
+.class-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    border: 1px solid oklch(var(--bc) / 0.1);
+}
+
+.class-name { flex: 1; text-align: left; }
+
+.class-count {
+    font-size: 10px;
+    opacity: 0.4;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    min-width: 32px;
+    text-align: right;
+}
+
+.class-btn.active .class-count { opacity: 0.6; }
+
+.class-key {
+    margin-left: 4px;
+    font-size: 10px;
+    opacity: 0.3;
+    font-weight: 600;
+}
+
+.class-btn.active .class-key { opacity: 0.5; }
+
+/* ===== Canvas ===== */
+#canvas-viewport {
+    overflow: hidden;
+    border-radius: var(--rounded-box, 1rem);
+    background: oklch(var(--b1));
+    position: relative;
+    box-shadow: 0 2px 12px oklch(var(--bc) / 0.08);
+}
+
+#canvas-wrapper {
+    position: absolute;
+    width: 512px;
+    height: 512px;
+    transform-origin: 0 0;
+    cursor: crosshair;
+}
+
+#canvas-wrapper canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#image-canvas { z-index: 1; }
+#overlay-canvas { z-index: 2; }
+#interaction-canvas { z-index: 3; }
+
+/* ===== Thumbnails ===== */
+.thumb-item {
+    position: relative;
+    cursor: pointer;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: border-color 0.15s;
+    flex-shrink: 0;
+}
+
+.thumb-item:hover {
+    border-color: oklch(var(--bc) / 0.2);
+}
+
+.thumb-item.active {
+    border-color: oklch(var(--p));
+    box-shadow: 0 0 0 1px oklch(var(--p) / 0.3);
+}
+
+.thumb-item img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+.thumb-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1px 4px;
+    background: oklch(var(--bc) / 0.5);
+    color: oklch(var(--b1));
+    font-size: 9px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.thumb-item.labeled .thumb-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: oklch(var(--su));
+    border: 1px solid oklch(var(--b1));
+}
+
+#thumbnail-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+#thumbnail-list::-webkit-scrollbar-thumb {
+    background: oklch(var(--bc) / 0.15);
+    border-radius: 2px;
+}
+
+.hidden { display: none !important; }
