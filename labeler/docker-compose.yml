@@ -4,7 +4,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ../data/tiles:/data/tiles:ro
+      - ../data/tiles:/data/tiles
       - ../data/labels:/data/labels
       - ../configs:/data/configs
       - ./embeddings:/data/embeddings

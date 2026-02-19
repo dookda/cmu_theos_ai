@@ -129,13 +129,14 @@ const ClassPanel = {
             modal.close();
         } else {
             const err = await res.json().catch(() => ({}));
-            alert(`Failed to add class: ${err.detail || res.statusText}`);
+            App.toast(`Failed to add class: ${err.detail || res.statusText}`);
         }
     },
 
     async removeClass(index) {
         const cls = this.classes[index];
-        if (!confirm(`Delete class "${cls.name}"?`)) return;
+        const confirmed = await App.showConfirm(`Delete class "${cls.name}"?`, 'Delete Class');
+        if (!confirmed) return;
 
         const res = await fetch(`/api/classes/${index}`, { method: 'DELETE' });
 
@@ -148,7 +149,7 @@ const ClassPanel = {
             this.render();
         } else {
             const err = await res.json().catch(() => ({}));
-            alert(`Failed to delete class: ${err.detail || res.statusText}`);
+            App.toast(`Failed to delete class: ${err.detail || res.statusText}`);
         }
     },
 };

@@ -296,16 +296,56 @@ const App = {
         });
     },
 
+    // --- Modal helpers ---
+
+    showConfirm(message, title = 'Confirm') {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('modal-confirm');
+            document.getElementById('modal-confirm-title').textContent = title;
+            document.getElementById('modal-confirm-message').textContent = message;
+
+            const okBtn = document.getElementById('btn-confirm-ok');
+            const cancelBtn = document.getElementById('btn-confirm-cancel');
+
+            const cleanup = (result) => {
+                modal.close();
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
+                resolve(result);
+            };
+            const onOk = () => cleanup(true);
+            const onCancel = () => cleanup(false);
+
+            okBtn.addEventListener('click', onOk);
+            cancelBtn.addEventListener('click', onCancel);
+            modal.showModal();
+        });
+    },
+
+    toast(message, type = 'error') {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        const cls = type === 'success' ? 'alert-success' : type === 'info' ? 'alert-info' : 'alert-error';
+        el.className = `alert ${cls} text-sm py-2 px-4 shadow pointer-events-auto`;
+        el.textContent = message;
+        container.appendChild(el);
+        setTimeout(() => el.remove(), 3500);
+    },
+
     async deleteCurrent() {
         if (!this.currentFilename) return;
         const filename = this.currentFilename;
 
-        if (!confirm(`Delete "${filename}" and all its associated files?\nThis cannot be undone.`)) return;
+        const confirmed = await this.showConfirm(
+            `Delete "${filename}" and all its associated files?\nThis cannot be undone.`,
+            'Delete Tile'
+        );
+        if (!confirmed) return;
 
         const res = await fetch(`/api/tiles/${filename}`, { method: 'DELETE' });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            alert(`Failed to delete: ${err.detail || res.statusText}`);
+            this.toast(`Failed to delete: ${err.detail || res.statusText}`);
             return;
         }
 

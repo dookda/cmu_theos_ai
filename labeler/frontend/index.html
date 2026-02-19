@@ -133,9 +133,9 @@
         <!-- Bottom nav -->
         <nav class="flex items-center justify-center gap-3 px-6 py-2.5 bg-base-100 border-t border-base-300">
             <button id="btn-undo" title="Undo (Z)" class="btn btn-sm btn-ghost">Undo</button>
+            <button id="btn-delete-tile" title="Delete tile and label" class="btn btn-sm btn-error btn-outline">Delete</button>
             <button id="btn-clear" title="Clear" class="btn btn-sm btn-outline">Clear</button>
             <button id="btn-save" title="Save (S)" class="btn btn-sm btn-primary">Save</button>
-            <button id="btn-delete-tile" title="Delete tile and label" class="btn btn-sm btn-error btn-outline">Delete</button>
             <div class="divider divider-horizontal mx-0"></div>
             <button id="btn-prev" title="Previous tile" class="btn btn-sm btn-primary btn-outline">&larr; Prev</button>
             <select id="tile-select" class="select select-bordered select-sm max-w-[220px]"></select>
@@ -193,6 +193,22 @@
 
         </div>
     </aside>
+
+    <!-- Confirm Modal -->
+    <dialog id="modal-confirm" class="modal">
+        <div class="modal-box w-80">
+            <h3 id="modal-confirm-title" class="font-bold text-base mb-2">Confirm</h3>
+            <p id="modal-confirm-message" class="text-sm text-base-content/70 whitespace-pre-line"></p>
+            <div class="modal-action mt-4">
+                <button id="btn-confirm-cancel" class="btn btn-ghost btn-sm">Cancel</button>
+                <button id="btn-confirm-ok" class="btn btn-error btn-sm">Confirm</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast toast-end toast-bottom z-50 pointer-events-none"></div>
 
     <!-- Add Class Modal -->
     <dialog id="modal-add-class" class="modal">

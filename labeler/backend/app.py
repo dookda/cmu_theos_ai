@@ -167,7 +167,10 @@ def delete_tile(filename: str):
     path = os.path.join(_tiles_dir(), filename)
     if not os.path.exists(path):
         raise HTTPException(404, "Tile not found")
-    result = delete_tile_files(filename, _get_folder(), _tiles_dir(), EMBEDDINGS_DIR)
+    try:
+        result = delete_tile_files(filename, _get_folder(), _tiles_dir(), EMBEDDINGS_DIR)
+    except OSError as e:
+        raise HTTPException(500, f"Failed to delete: {e}")
     return {"status": "deleted", "filename": filename, "deleted": result["deleted"]}
 
 
