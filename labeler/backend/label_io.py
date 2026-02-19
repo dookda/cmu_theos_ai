@@ -137,6 +137,44 @@ def save_yolo_segment(filename: str, lines: list[str], folder: str = ""):
         f.write("\n".join(lines) + "\n" if lines else "")
 
 
+def run_kmeans(path: str, n_clusters: int, nir_path: str | None = None) -> dict:
+    """Run K-means clustering on a tile image (RGB or RGB+NIR).
+
+    Returns cluster mask as base64 PNG and representative RGB colors per cluster.
+    """
+    img = cv2.imread(path)
+    if img is None:
+        raise ValueError(f"Could not read image: {path}")
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.float32)
+    h, w = img_rgb.shape[:2]
+
+    if nir_path and os.path.exists(nir_path):
+        nir = cv2.imread(nir_path, cv2.IMREAD_GRAYSCALE).astype(np.float32)
+        nir = nir[:h, :w]  # ensure same size
+        channels = np.concatenate([img_rgb, nir[:, :, np.newaxis]], axis=2)
+    else:
+        channels = img_rgb
+
+    pixels = channels.reshape(-1, channels.shape[2])
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2)
+    _, labels, centers = cv2.kmeans(pixels, n_clusters, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+
+    cluster_mask = labels.reshape(h, w).astype(np.uint8)
+    mask_img = Image.fromarray(cluster_mask, mode='L')
+    buf = io.BytesIO()
+    mask_img.save(buf, format='PNG')
+    mask_b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+
+    # Representative RGB colors (first 3 channels of centers)
+    rgb_centers = centers[:, :3].astype(int).clip(0, 255).tolist()
+
+    return {
+        "mask": mask_b64,
+        "n_clusters": n_clusters,
+        "centers": rgb_centers,
+    }
+
+
 def delete_tile_files(filename: str, folder: str, tiles_dir: str, embeddings_dir: str) -> dict:
     """Delete a tile and all its associated files (NIR, label, YOLO, embedding)."""
     stem = os.path.splitext(filename)[0]

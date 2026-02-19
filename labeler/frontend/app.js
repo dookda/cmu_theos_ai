@@ -16,6 +16,8 @@ const App = {
     samPointLabels: [],
     samBoxStart: null,
     samHasPreview: false,
+    kmeansClusterMask: null,
+    kmeansCenters: null,
 
     async init() {
         Canvas.init();
@@ -252,6 +254,7 @@ const App = {
         this.currentIndex = index;
         this.currentFilename = this.filteredTiles[index];
         this.resetSAMState();
+        this.clearKMeansState();
 
         document.getElementById('tile-select').value = index;
         this.updateThumbnailActive();
@@ -372,6 +375,81 @@ const App = {
         }
     },
 
+    // --- K-Means ---
+
+    async runKMeans() {
+        if (!this.currentFilename) return;
+        const k = parseInt(document.getElementById('kmeans-k').value);
+        const btn = document.getElementById('btn-run-kmeans');
+        btn.classList.add('loading');
+        btn.disabled = true;
+        this.setStatus('Running K-Means...');
+        try {
+            const res = await fetch(`/api/kmeans/${this.currentFilename}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ n_clusters: k }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                this.toast(`K-Means failed: ${err.detail || res.statusText}`);
+                return;
+            }
+            const data = await res.json();
+            this.kmeansClusterMask = await this.decodeLabelMask(data.mask);
+            this.kmeansCenters = data.centers;
+            this.showKMeansModal(data.n_clusters, data.centers);
+        } finally {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            this.setStatus('Ready');
+        }
+    },
+
+    showKMeansModal(nClusters, centers) {
+        const list = document.getElementById('kmeans-cluster-list');
+        list.innerHTML = '';
+        const numClasses = ClassPanel.classes.length;
+
+        for (let i = 0; i < nClusters; i++) {
+            const [r, g, b] = centers[i];
+            const opts = ClassPanel.classes.map((cls, ci) =>
+                `<option value="${ci}" ${ci === i % numClasses ? 'selected' : ''}>${cls.name}</option>`
+            ).join('');
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2';
+            row.innerHTML = `
+                <div class="w-5 h-5 rounded flex-shrink-0 border border-base-300" style="background:rgb(${r},${g},${b})"></div>
+                <span class="text-xs text-base-content/70 flex-1">Cluster ${i}</span>
+                <select class="select select-bordered select-xs w-28" data-cluster="${i}">${opts}</select>`;
+            list.appendChild(row);
+        }
+        document.getElementById('modal-kmeans').showModal();
+    },
+
+    applyKMeans() {
+        if (!this.kmeansClusterMask) return;
+        const mapping = {};
+        document.querySelectorAll('#kmeans-cluster-list select').forEach(sel => {
+            mapping[parseInt(sel.dataset.cluster)] = parseInt(sel.value);
+        });
+        Canvas.pushUndo();
+        for (let i = 0; i < Canvas.labelMask.length; i++) {
+            Canvas.labelMask[i] = mapping[this.kmeansClusterMask[i]] ?? 0;
+        }
+        Canvas.renderOverlay();
+        document.getElementById('modal-kmeans').close();
+        // Keep kmeansClusterMask + kmeansCenters so user can re-assign without re-running
+        document.getElementById('btn-reassign-kmeans').classList.remove('hidden');
+        this.setStatus('K-Means applied');
+    },
+
+    clearKMeansState() {
+        this.kmeansClusterMask = null;
+        this.kmeansCenters = null;
+        document.getElementById('btn-reassign-kmeans').classList.add('hidden');
+    },
+
     async save() {
         if (!this.currentFilename) return;
         const b64 = Canvas.getMaskAsBase64();
@@ -478,6 +556,12 @@ const App = {
         this.setStatus('Mask rejected');
     },
 
+    setActiveTool(tool) {
+        this.activeTool = tool;
+        document.querySelectorAll('[data-tool]').forEach(b =>
+            b.classList.toggle('btn-active', b.dataset.tool === tool));
+    },
+
     // --- Event listeners ---
 
     setupEventListeners() {
@@ -489,12 +573,28 @@ const App = {
         interCanvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
         interCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
+        // Tool tabs (SAM / Brush / K-Means)
+        const tabPanels = ['sam', 'brush', 'kmeans'];
+        document.querySelectorAll('#tool-tabs .tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('#tool-tabs .tab').forEach(t =>
+                    t.classList.toggle('tab-active', t === tab));
+                tabPanels.forEach(name => {
+                    document.getElementById(`tab-panel-${name}`).classList.toggle('hidden', tab.dataset.tab !== name);
+                });
+                // Switch active tool to match the selected tab
+                if (tab.dataset.tab === 'sam') {
+                    this.setActiveTool('sam');
+                } else if (tab.dataset.tab === 'brush') {
+                    this.setActiveTool('brush');
+                }
+            });
+        });
+
         // Tool buttons
         document.querySelectorAll('[data-tool]').forEach(btn => {
             btn.addEventListener('click', () => {
-                this.activeTool = btn.dataset.tool;
-                document.querySelectorAll('[data-tool]').forEach(b =>
-                    b.classList.toggle('btn-active', b === btn));
+                this.setActiveTool(btn.dataset.tool);
                 this.resetSAMState();
             });
         });
@@ -542,6 +642,21 @@ const App = {
             const val = parseInt(e.target.value);
             document.getElementById('grow-value').textContent = val;
             Canvas.setGrowRadius(val);
+        });
+
+        // K-Means
+        document.getElementById('kmeans-k').addEventListener('input', (e) => {
+            document.getElementById('kmeans-k-value').textContent = e.target.value;
+        });
+        document.getElementById('btn-run-kmeans').addEventListener('click', () => this.runKMeans());
+        document.getElementById('btn-reassign-kmeans').addEventListener('click', () => {
+            if (this.kmeansClusterMask && this.kmeansCenters) {
+                this.showKMeansModal(this.kmeansCenters.length, this.kmeansCenters);
+            }
+        });
+        document.getElementById('btn-kmeans-apply').addEventListener('click', () => this.applyKMeans());
+        document.getElementById('btn-kmeans-cancel').addEventListener('click', () => {
+            document.getElementById('modal-kmeans').close();
         });
 
         // Brightness

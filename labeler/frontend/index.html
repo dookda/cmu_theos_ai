@@ -27,32 +27,45 @@
                 <div id="class-list" class="flex flex-col gap-1"></div>
             </div>
 
-            <!-- Tools -->
+            <!-- Tools (tabbed: SAM | Brush | K-Means) -->
             <div>
-                <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-2">Tools</div>
-                <div id="tool-buttons" class="join w-full">
-                    <button class="join-item btn btn-sm flex-1 btn-active" data-tool="sam">SAM</button>
-                    <button class="join-item btn btn-sm flex-1" data-tool="brush">Brush</button>
-                    <button class="join-item btn btn-sm flex-1" data-tool="eraser">Eraser</button>
+                <div class="tabs tabs-bordered tabs-xs mb-2" id="tool-tabs">
+                    <button class="tab tab-active" data-tab="sam">SAM</button>
+                    <button class="tab" data-tab="brush">Brush</button>
+                    <button class="tab" data-tab="kmeans">K-Means</button>
+                </div>
+
+                <!-- SAM panel -->
+                <div id="tab-panel-sam" class="flex flex-col gap-2">
+                    <label class="label py-0"><span class="label-text text-xs">SAM Grow: <span id="grow-value" class="font-semibold">0</span>px</span></label>
+                    <input type="range" id="grow-slider" min="-10" max="10" value="0" class="range range-xs range-accent">
+                </div>
+
+                <!-- Brush panel -->
+                <div id="tab-panel-brush" class="hidden flex flex-col gap-2">
+                    <div class="join w-full">
+                        <button class="join-item btn btn-sm flex-1" data-tool="brush">Brush</button>
+                        <button class="join-item btn btn-sm flex-1" data-tool="eraser">Eraser</button>
+                    </div>
+                    <div>
+                        <label class="label py-0"><span class="label-text text-xs">Brush: <span id="brush-size-value" class="font-semibold">10</span>px</span></label>
+                        <input type="range" id="brush-size" min="1" max="50" value="10" class="range range-xs range-primary">
+                    </div>
+                </div>
+
+                <!-- K-Means panel -->
+                <div id="tab-panel-kmeans" class="hidden flex flex-col gap-2">
+                    <label class="label py-0"><span class="label-text text-xs">Clusters: <span id="kmeans-k-value" class="font-semibold">4</span></span></label>
+                    <input type="range" id="kmeans-k" min="2" max="16" value="4" class="range range-xs range-warning">
+                    <button id="btn-run-kmeans" class="btn btn-warning btn-xs w-full mt-1">Run K-Means</button>
+                    <button id="btn-reassign-kmeans" class="btn btn-outline btn-warning btn-xs w-full hidden">Re-assign Clusters</button>
                 </div>
             </div>
 
-            <!-- Brush size -->
-            <div>
-                <label class="label py-0"><span class="label-text text-xs">Brush: <span id="brush-size-value" class="font-semibold">10</span>px</span></label>
-                <input type="range" id="brush-size" min="1" max="50" value="10" class="range range-xs range-primary">
-            </div>
-
-            <!-- Opacity -->
+            <!-- Opacity (always visible) -->
             <div>
                 <label class="label py-0"><span class="label-text text-xs">Opacity: <span id="opacity-value" class="font-semibold">50</span>%</span></label>
                 <input type="range" id="opacity-slider" min="0" max="100" value="50" class="range range-xs range-primary">
-            </div>
-
-            <!-- SAM Grow/Shrink -->
-            <div>
-                <label class="label py-0"><span class="label-text text-xs">SAM Grow: <span id="grow-value" class="font-semibold">0</span>px</span></label>
-                <input type="range" id="grow-slider" min="-10" max="10" value="0" class="range range-xs range-accent">
             </div>
 
             <div class="divider my-0"></div>
@@ -66,7 +79,6 @@
                 <input type="range" id="contrast-slider" min="0" max="200" value="100" class="range range-xs range-secondary">
                 <button id="btn-reset-adjust" class="btn btn-ghost btn-xs mt-1 text-base-content/50">Reset</button>
             </div>
-
 
         </div>
     </aside>
@@ -227,6 +239,20 @@
             <div class="modal-action mt-4">
                 <button id="btn-cancel-class" class="btn btn-ghost btn-sm">Cancel</button>
                 <button id="btn-confirm-class" class="btn btn-primary btn-sm">Add Class</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <!-- K-Means Modal -->
+    <dialog id="modal-kmeans" class="modal">
+        <div class="modal-box w-80">
+            <h3 class="font-bold text-base mb-1">K-Means Result</h3>
+            <p class="text-xs text-base-content/50 mb-3">Assign each cluster to a class:</p>
+            <div id="kmeans-cluster-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1"></div>
+            <div class="modal-action mt-4">
+                <button id="btn-kmeans-cancel" class="btn btn-ghost btn-sm">Cancel</button>
+                <button id="btn-kmeans-apply" class="btn btn-primary btn-sm">Apply to Canvas</button>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>

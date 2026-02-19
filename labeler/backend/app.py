@@ -8,7 +8,7 @@ from .config import TILES_DIR, LABELS_DIR, EMBEDDINGS_DIR, TILE_SIZE, load_class
 from .label_io import (
     load_label, save_label, mask_to_base64, base64_to_mask, list_labeled_files,
     mask_to_yolo_detect, mask_to_yolo_segment, save_yolo_detect, save_yolo_segment,
-    delete_tile_files,
+    delete_tile_files, run_kmeans,
 )
 from .sam_engine import sam_engine
 
@@ -95,6 +95,10 @@ class ClassDef(BaseModel):
 
 class UpdateClassesRequest(BaseModel):
     classes: list[ClassDef]
+
+
+class KMeansRequest(BaseModel):
+    n_clusters: int
 
 
 # --- Folder endpoints ---
@@ -256,6 +260,25 @@ def precompute_embeddings(background_tasks: BackgroundTasks):
     folder = _get_folder()
     background_tasks.add_task(sam_engine.precompute_all, folder)
     return {"status": "started"}
+
+
+# --- K-Means endpoint ---
+
+@app.post("/api/kmeans/{filename}")
+def kmeans_segment(filename: str, req: KMeansRequest):
+    if not 2 <= req.n_clusters <= 16:
+        raise HTTPException(400, "n_clusters must be between 2 and 16")
+    path = os.path.join(_tiles_dir(), filename)
+    if not os.path.exists(path):
+        raise HTTPException(404, "Tile not found")
+    stem = os.path.splitext(filename)[0]
+    nir_path = os.path.join(_tiles_dir(), f"{stem}_nir.png")
+    nir_path = nir_path if os.path.exists(nir_path) else None
+    try:
+        result = run_kmeans(path, req.n_clusters, nir_path)
+    except Exception as e:
+        raise HTTPException(500, f"K-Means failed: {e}")
+    return result
 
 
 # --- Class management endpoints ---
