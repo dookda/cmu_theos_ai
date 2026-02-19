@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .config import TILES_DIR, LABELS_DIR, TILE_SIZE, load_classes
+from .config import TILES_DIR, LABELS_DIR, TILE_SIZE, load_classes, save_classes
 from .label_io import (
     load_label, save_label, mask_to_base64, base64_to_mask, list_labeled_files,
     mask_to_yolo_detect, mask_to_yolo_segment, save_yolo_detect, save_yolo_segment,
@@ -87,6 +87,15 @@ class ExportFormatsRequest(BaseModel):
     formats: list[str]  # subset of ["semantic", "detect", "segment"]
 
 
+class ClassDef(BaseModel):
+    name: str
+    color: list[int]  # [R, G, B]
+
+
+class UpdateClassesRequest(BaseModel):
+    classes: list[ClassDef]
+
+
 # --- Folder endpoints ---
 
 @app.get("/api/folders")
@@ -167,8 +176,9 @@ def post_label(filename: str, req: SaveLabelRequest):
     mask = base64_to_mask(req.mask)
     if mask.shape != (TILE_SIZE, TILE_SIZE):
         raise HTTPException(400, f"Mask must be {TILE_SIZE}x{TILE_SIZE}")
-    if mask.max() > 6:
-        raise HTTPException(400, "Mask values must be 0-6")
+    num_classes = len(load_classes())
+    if mask.max() >= num_classes:
+        raise HTTPException(400, f"Mask values must be 0-{num_classes - 1}")
     folder = _get_folder()
 
     # Always save the semantic mask (source of truth)
@@ -233,6 +243,38 @@ def precompute_embeddings(background_tasks: BackgroundTasks):
     folder = _get_folder()
     background_tasks.add_task(sam_engine.precompute_all, folder)
     return {"status": "started"}
+
+
+# --- Class management endpoints ---
+
+@app.post("/api/classes")
+def update_classes(req: UpdateClassesRequest):
+    if len(req.classes) < 1:
+        raise HTTPException(400, "Must have at least 1 class (background)")
+    if req.classes[0].name != "background":
+        raise HTTPException(400, "First class must be 'background'")
+    for cls in req.classes:
+        if len(cls.color) != 3 or not all(0 <= c <= 255 for c in cls.color):
+            raise HTTPException(400, f"Invalid color for class '{cls.name}'")
+
+    classes = [{"name": c.name, "color": c.color} for c in req.classes]
+    save_classes([{"index": i, **c} for i, c in enumerate(classes)])
+    return {"classes": load_classes()}
+
+
+@app.delete("/api/classes/{index}")
+def delete_class(index: int):
+    classes = load_classes()
+    if index == 0:
+        raise HTTPException(400, "Cannot delete background class")
+    if index >= len(classes):
+        raise HTTPException(404, "Class not found")
+    classes.pop(index)
+    # Re-index
+    for i, c in enumerate(classes):
+        c["index"] = i
+    save_classes(classes)
+    return {"classes": load_classes()}
 
 
 # --- Config endpoint ---

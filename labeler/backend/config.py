@@ -34,3 +34,21 @@ def load_classes():
             {"index": 5, "name": "bare_soil", "color": [139, 69, 19]},
             {"index": 6, "name": "road", "color": [128, 128, 128]},
         ]
+
+
+def save_classes(classes: list[dict]):
+    """Save class definitions back to config.yaml, preserving other settings."""
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+    except FileNotFoundError:
+        config = {}
+
+    config["classes"] = [
+        {"name": cls["name"], "color": cls["color"]}
+        for cls in classes
+    ]
+    config["num_classes"] = len(classes)
+
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)

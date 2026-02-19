@@ -160,11 +160,42 @@ const App = {
                 const badge = document.createElement('div');
                 badge.className = 'thumb-badge';
                 div.appendChild(badge);
+
+                // Render label overlay on thumbnail
+                this.renderThumbOverlay(div, tile);
             }
 
             div.addEventListener('click', () => this.navigateTo(i));
             container.appendChild(div);
         });
+    },
+
+    async renderThumbOverlay(thumbDiv, tile) {
+        const res = await fetch(`/api/labels/${tile}`);
+        const data = await res.json();
+        if (!data.exists || !data.mask) return;
+
+        const maskArray = await this.decodeLabelMask(data.mask);
+
+        const canvas = document.createElement('canvas');
+        canvas.className = 'thumb-overlay';
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.createImageData(512, 512);
+
+        for (let i = 0; i < 512 * 512; i++) {
+            const cls = maskArray[i];
+            if (cls === 0) continue;
+            const color = ClassPanel.getColor(cls);
+            imgData.data[i * 4] = color[0];
+            imgData.data[i * 4 + 1] = color[1];
+            imgData.data[i * 4 + 2] = color[2];
+            imgData.data[i * 4 + 3] = 140;
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+        thumbDiv.appendChild(canvas);
     },
 
     updateThumbnailActive() {
@@ -181,12 +212,20 @@ const App = {
 
     updateThumbnailLabeled(index) {
         const items = document.querySelectorAll('.thumb-item');
-        if (items[index] && !items[index].classList.contains('labeled')) {
+        if (!items[index]) return;
+        const tile = this.filteredTiles[index];
+
+        if (!items[index].classList.contains('labeled')) {
             items[index].classList.add('labeled');
             const badge = document.createElement('div');
             badge.className = 'thumb-badge';
             items[index].appendChild(badge);
         }
+
+        // Remove old overlay and re-render
+        const oldOverlay = items[index].querySelector('.thumb-overlay');
+        if (oldOverlay) oldOverlay.remove();
+        this.renderThumbOverlay(items[index], tile);
     },
 
     populateSelect() {
