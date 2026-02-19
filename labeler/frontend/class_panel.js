@@ -75,38 +75,36 @@ const ClassPanel = {
 
     setupManagement() {
         const addBtn = document.getElementById('btn-add-class');
-        const form = document.getElementById('add-class-form');
+        const modal = document.getElementById('modal-add-class');
         const confirmBtn = document.getElementById('btn-confirm-class');
         const cancelBtn = document.getElementById('btn-cancel-class');
         const nameInput = document.getElementById('new-class-name');
 
         addBtn.addEventListener('click', () => {
-            form.classList.toggle('hidden');
-            if (!form.classList.contains('hidden')) {
-                nameInput.value = '';
-                nameInput.focus();
-            }
+            nameInput.value = '';
+            modal.showModal();
+            setTimeout(() => nameInput.focus(), 50);
         });
 
-        cancelBtn.addEventListener('click', () => {
-            form.classList.add('hidden');
-        });
+        cancelBtn.addEventListener('click', () => modal.close());
 
         confirmBtn.addEventListener('click', () => this.addClass());
 
         nameInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') this.addClass();
-            if (e.key === 'Escape') form.classList.add('hidden');
         });
     },
 
     async addClass() {
         const nameInput = document.getElementById('new-class-name');
         const colorInput = document.getElementById('new-class-color');
-        const form = document.getElementById('add-class-form');
+        const modal = document.getElementById('modal-add-class');
 
         const name = nameInput.value.trim();
-        if (!name) return;
+        if (!name) {
+            nameInput.focus();
+            return;
+        }
 
         // Convert hex color to RGB array
         const hex = colorInput.value;
@@ -128,7 +126,10 @@ const ClassPanel = {
             const data = await res.json();
             this.classes = data.classes;
             this.render();
-            form.classList.add('hidden');
+            modal.close();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            alert(`Failed to add class: ${err.detail || res.statusText}`);
         }
     },
 
@@ -145,6 +146,9 @@ const ClassPanel = {
                 this.activeIndex = this.classes.length - 1;
             }
             this.render();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            alert(`Failed to delete class: ${err.detail || res.statusText}`);
         }
     },
 };

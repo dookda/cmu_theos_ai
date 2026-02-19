@@ -4,10 +4,11 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from .config import TILES_DIR, LABELS_DIR, TILE_SIZE, load_classes, save_classes
+from .config import TILES_DIR, LABELS_DIR, EMBEDDINGS_DIR, TILE_SIZE, load_classes, save_classes
 from .label_io import (
     load_label, save_label, mask_to_base64, base64_to_mask, list_labeled_files,
     mask_to_yolo_detect, mask_to_yolo_segment, save_yolo_detect, save_yolo_segment,
+    delete_tile_files,
 )
 from .sam_engine import sam_engine
 
@@ -161,6 +162,15 @@ def get_tile(filename: str):
     return FileResponse(path, media_type="image/png")
 
 
+@app.delete("/api/tiles/{filename}")
+def delete_tile(filename: str):
+    path = os.path.join(_tiles_dir(), filename)
+    if not os.path.exists(path):
+        raise HTTPException(404, "Tile not found")
+    result = delete_tile_files(filename, _get_folder(), _tiles_dir(), EMBEDDINGS_DIR)
+    return {"status": "deleted", "filename": filename, "deleted": result["deleted"]}
+
+
 # --- Label endpoints ---
 
 @app.get("/api/labels/{filename}")
@@ -258,7 +268,10 @@ def update_classes(req: UpdateClassesRequest):
             raise HTTPException(400, f"Invalid color for class '{cls.name}'")
 
     classes = [{"name": c.name, "color": c.color} for c in req.classes]
-    save_classes([{"index": i, **c} for i, c in enumerate(classes)])
+    try:
+        save_classes([{"index": i, **c} for i, c in enumerate(classes)])
+    except OSError as e:
+        raise HTTPException(500, f"Failed to save config: {e}")
     return {"classes": load_classes()}
 
 
@@ -270,10 +283,12 @@ def delete_class(index: int):
     if index >= len(classes):
         raise HTTPException(404, "Class not found")
     classes.pop(index)
-    # Re-index
     for i, c in enumerate(classes):
         c["index"] = i
-    save_classes(classes)
+    try:
+        save_classes(classes)
+    except OSError as e:
+        raise HTTPException(500, f"Failed to save config: {e}")
     return {"classes": load_classes()}
 
 

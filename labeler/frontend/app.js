@@ -296,6 +296,42 @@ const App = {
         });
     },
 
+    async deleteCurrent() {
+        if (!this.currentFilename) return;
+        const filename = this.currentFilename;
+
+        if (!confirm(`Delete "${filename}" and all its associated files?\nThis cannot be undone.`)) return;
+
+        const res = await fetch(`/api/tiles/${filename}`, { method: 'DELETE' });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(`Failed to delete: ${err.detail || res.statusText}`);
+            return;
+        }
+
+        // Remove from tile lists
+        const tileIdx = this.tiles.indexOf(filename);
+        if (tileIdx !== -1) this.tiles.splice(tileIdx, 1);
+        const filteredIdx = this.filteredTiles.indexOf(filename);
+        if (filteredIdx !== -1) this.filteredTiles.splice(filteredIdx, 1);
+        this.labeledSet.delete(filename);
+
+        // Navigate to same position (clamped) or clear canvas if no tiles left
+        this.currentFilename = null;
+        Canvas.isDirty = false;
+        this.populateSelect();
+        this.renderThumbnails();
+        await this.updateProgressFromServer();
+
+        if (this.filteredTiles.length === 0) {
+            Canvas.loadMask(new Uint8Array(512 * 512));
+            this.setStatus('No tiles remaining');
+        } else {
+            const nextIndex = Math.min(filteredIdx, this.filteredTiles.length - 1);
+            await this.navigateTo(nextIndex);
+        }
+    },
+
     async save() {
         if (!this.currentFilename) return;
         const b64 = Canvas.getMaskAsBase64();
@@ -427,6 +463,7 @@ const App = {
         document.getElementById('btn-undo').addEventListener('click', () => Canvas.undo());
         document.getElementById('btn-clear').addEventListener('click', () => Canvas.clearMask());
         document.getElementById('btn-save').addEventListener('click', () => this.save());
+        document.getElementById('btn-delete-tile').addEventListener('click', () => this.deleteCurrent());
 
         // Navigation
         document.getElementById('btn-prev').addEventListener('click', () =>

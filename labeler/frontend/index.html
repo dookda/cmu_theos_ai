@@ -25,14 +25,6 @@
                     <button id="btn-add-class" class="btn btn-ghost btn-xs btn-square" title="Add class">+</button>
                 </div>
                 <div id="class-list" class="flex flex-col gap-1"></div>
-                <div id="add-class-form" class="hidden mt-2 flex flex-col gap-1.5 p-2 bg-base-200 rounded-lg">
-                    <input type="text" id="new-class-name" placeholder="Class name" class="input input-xs input-bordered w-full">
-                    <div class="flex items-center gap-2">
-                        <input type="color" id="new-class-color" value="#ff6600" class="w-6 h-6 cursor-pointer rounded border-0 p-0">
-                        <button id="btn-confirm-class" class="btn btn-xs btn-primary flex-1">Add</button>
-                        <button id="btn-cancel-class" class="btn btn-xs btn-ghost">Cancel</button>
-                    </div>
-                </div>
             </div>
 
             <!-- Tools -->
@@ -141,8 +133,9 @@
         <!-- Bottom nav -->
         <nav class="flex items-center justify-center gap-3 px-6 py-2.5 bg-base-100 border-t border-base-300">
             <button id="btn-undo" title="Undo (Z)" class="btn btn-sm btn-ghost">Undo</button>
-            <button id="btn-clear" title="Clear" class="btn btn-sm btn-error btn-outline">Clear</button>
+            <button id="btn-clear" title="Clear" class="btn btn-sm btn-outline">Clear</button>
             <button id="btn-save" title="Save (S)" class="btn btn-sm btn-primary">Save</button>
+            <button id="btn-delete-tile" title="Delete tile and label" class="btn btn-sm btn-error btn-outline">Delete</button>
             <div class="divider divider-horizontal mx-0"></div>
             <button id="btn-prev" title="Previous tile" class="btn btn-sm btn-primary btn-outline">&larr; Prev</button>
             <select id="tile-select" class="select select-bordered select-sm max-w-[220px]"></select>
@@ -200,6 +193,28 @@
 
         </div>
     </aside>
+
+    <!-- Add Class Modal -->
+    <dialog id="modal-add-class" class="modal">
+        <div class="modal-box w-72">
+            <h3 class="font-bold text-base mb-4">Add New Class</h3>
+            <div class="flex flex-col gap-3">
+                <div>
+                    <label class="label py-0 mb-1"><span class="label-text text-xs">Class name</span></label>
+                    <input type="text" id="new-class-name" placeholder="e.g. forest" class="input input-bordered input-sm w-full">
+                </div>
+                <div>
+                    <label class="label py-0 mb-1"><span class="label-text text-xs">Color</span></label>
+                    <input type="color" id="new-class-color" value="#22c55e" class="w-full h-10 cursor-pointer rounded-lg border border-base-300 p-1">
+                </div>
+            </div>
+            <div class="modal-action mt-4">
+                <button id="btn-cancel-class" class="btn btn-ghost btn-sm">Cancel</button>
+                <button id="btn-confirm-class" class="btn btn-primary btn-sm">Add Class</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
 
     <script src="class_panel.js"></script>
     <script src="canvas.js"></script>

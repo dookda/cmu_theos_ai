@@ -6,7 +6,7 @@ services:
     volumes:
       - ../data/tiles:/data/tiles:ro
       - ../data/labels:/data/labels
-      - ../configs:/data/configs:ro
+      - ../configs:/data/configs
       - ./embeddings:/data/embeddings
       # If Dockerfile download fails, uncomment and place mobile_sam.pt in ./checkpoints/
       # - ./checkpoints:/app/checkpoints:ro

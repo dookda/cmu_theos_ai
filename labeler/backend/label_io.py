@@ -135,3 +135,33 @@ def save_yolo_segment(filename: str, lines: list[str], folder: str = ""):
     path = os.path.join(d, txt_name)
     with open(path, "w") as f:
         f.write("\n".join(lines) + "\n" if lines else "")
+
+
+def delete_tile_files(filename: str, folder: str, tiles_dir: str, embeddings_dir: str) -> dict:
+    """Delete a tile and all its associated files (NIR, label, YOLO, embedding)."""
+    stem = os.path.splitext(filename)[0]
+    folder_suffix = folder if folder else ""
+
+    candidates = [
+        # Tile image
+        os.path.join(tiles_dir, filename),
+        # NIR band
+        os.path.join(tiles_dir, f"{stem}_nir.png"),
+        # Semantic label
+        os.path.join(_folder_dir(folder_suffix), filename),
+        # YOLO detect label
+        os.path.join(_folder_dir(folder_suffix), "yolo_detect", f"{stem}.txt"),
+        # YOLO segment label
+        os.path.join(_folder_dir(folder_suffix), "yolo_segment", f"{stem}.txt"),
+        # SAM embedding
+        os.path.join(embeddings_dir, folder_suffix, f"{stem}.npy") if folder_suffix
+        else os.path.join(embeddings_dir, f"{stem}.npy"),
+    ]
+
+    deleted = []
+    for path in candidates:
+        if os.path.exists(path):
+            os.remove(path)
+            deleted.append(path)
+
+    return {"deleted": deleted}
