@@ -63,7 +63,7 @@ def _tiles_dir() -> str:
 
 # --- Export format state ---
 
-_export_formats: set[str] = {"semantic"}
+_export_formats: set[str] = {"semantic", "detect", "segment"}
 _VALID_FORMATS = {"semantic", "detect", "segment"}
 
 

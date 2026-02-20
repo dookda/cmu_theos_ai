@@ -15,9 +15,14 @@ def _folder_dir(folder: str = "") -> str:
     return LABELS_DIR
 
 
+def _semantic_dir(folder: str = "") -> str:
+    """Get the semantic mask subdirectory for a given folder."""
+    return os.path.join(_folder_dir(folder), "semantic")
+
+
 def list_labeled_files(folder: str = "") -> set:
-    """Return set of filenames that have labels."""
-    d = _folder_dir(folder)
+    """Return set of filenames that have semantic labels."""
+    d = _semantic_dir(folder)
     if not os.path.isdir(d):
         return set()
     return {f for f in os.listdir(d) if f.endswith(".png")}
@@ -25,7 +30,7 @@ def list_labeled_files(folder: str = "") -> set:
 
 def load_label(filename: str, folder: str = "") -> np.ndarray | None:
     """Load a label mask. Returns None if not found."""
-    path = os.path.join(_folder_dir(folder), filename)
+    path = os.path.join(_semantic_dir(folder), filename)
     if not os.path.exists(path):
         return None
     mask = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
@@ -34,7 +39,7 @@ def load_label(filename: str, folder: str = "") -> np.ndarray | None:
 
 def save_label(filename: str, mask: np.ndarray, folder: str = ""):
     """Save a label mask as uint8 grayscale PNG."""
-    d = _folder_dir(folder)
+    d = _semantic_dir(folder)
     os.makedirs(d, exist_ok=True)
     assert mask.shape == (TILE_SIZE, TILE_SIZE), f"Expected ({TILE_SIZE},{TILE_SIZE}), got {mask.shape}"
     assert mask.dtype == np.uint8
@@ -79,7 +84,7 @@ def mask_to_yolo_detect(mask: np.ndarray) -> list[str]:
             cy = (y1 + bh / 2) / h
             nw = bw / w
             nh = bh / h
-            lines.append(f"{int(cls)} {cx:.6f} {cy:.6f} {nw:.6f} {nh:.6f}")
+            lines.append(f"{int(cls) - 1} {cx:.6f} {cy:.6f} {nw:.6f} {nh:.6f}")
 
     return lines
 
@@ -112,7 +117,7 @@ def mask_to_yolo_segment(mask: np.ndarray) -> list[str]:
                 approx = contour
             points = approx.reshape(-1, 2)
             coords_str = " ".join(f"{px / w:.6f} {py / h:.6f}" for px, py in points)
-            lines.append(f"{int(cls)} {coords_str}")
+            lines.append(f"{int(cls) - 1} {coords_str}")
 
     return lines
 
@@ -186,7 +191,7 @@ def delete_tile_files(filename: str, folder: str, tiles_dir: str, embeddings_dir
         # NIR band
         os.path.join(tiles_dir, f"{stem}_nir.png"),
         # Semantic label
-        os.path.join(_folder_dir(folder_suffix), filename),
+        os.path.join(_semantic_dir(folder_suffix), filename),
         # YOLO detect label
         os.path.join(_folder_dir(folder_suffix), "yolo_detect", f"{stem}.txt"),
         # YOLO segment label
