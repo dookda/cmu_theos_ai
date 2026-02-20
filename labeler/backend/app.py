@@ -141,6 +141,23 @@ def set_export_formats(req: ExportFormatsRequest):
 
 # --- Tile endpoints ---
 
+@app.get("/api/splits")
+def get_splits():
+    """Return train/val/test split sets from splits.json in the current tiles dir."""
+    import json
+    splits_path = os.path.join(_tiles_dir(), "splits.json")
+    if not os.path.exists(splits_path):
+        return {"splits": None}
+    try:
+        with open(splits_path, "r", encoding="utf-8") as f:
+            splits = json.load(f)
+        return {"splits": splits}
+    except Exception:
+        return {"splits": None}
+
+
+
+
 @app.get("/api/tiles")
 def get_tiles():
     td = _tiles_dir()

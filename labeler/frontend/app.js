@@ -9,6 +9,8 @@ const App = {
     currentIndex: 0,
     currentFilename: null,
     labeledSet: new Set(),
+    splits: null,       // {train: [...], val: [...], test: [...]} or null
+    splitFilter: 'all', // 'all' | 'train' | 'val' | 'test'
 
     activeTool: 'sam',  // sam, brush, eraser
     isDrawing: false,
@@ -106,12 +108,19 @@ const App = {
     },
 
     async loadTileList() {
-        const res = await fetch('/api/tiles');
-        const data = await res.json();
+        const [tilesRes, splitsRes, progressRes] = await Promise.all([
+            fetch('/api/tiles'),
+            fetch('/api/splits'),
+            fetch('/api/progress'),
+        ]);
+        const data = await tilesRes.json();
         this.tiles = data.tiles;
 
-        // Build labeled set
-        const progressRes = await fetch('/api/progress');
+        const splitsData = await splitsRes.json();
+        this.splits = splitsData.splits || null;
+        this.splitFilter = 'all';
+        this._updateSplitFilterUI();
+
         const progressData = await progressRes.json();
         this.updateProgress(progressData.labeled, progressData.total);
 
@@ -126,13 +135,34 @@ const App = {
         this.applyFilter();
     },
 
+    _updateSplitFilterUI() {
+        const container = document.getElementById('split-filter');
+        if (!this.splits) {
+            container.classList.add('hidden');
+            return;
+        }
+        container.classList.remove('hidden');
+        // Update button counts
+        container.querySelectorAll('[data-split]').forEach(btn => {
+            const split = btn.dataset.split;
+            const count = split === 'all' ? this.tiles.length : (this.splits[split] || []).length;
+            btn.classList.toggle('btn-active', split === this.splitFilter);
+            btn.textContent = split === 'all' ? `All (${count})` :
+                split.charAt(0).toUpperCase() + split.slice(1) + ` (${count})`;
+        });
+    },
+
     applyFilter() {
         const unlabeledOnly = document.getElementById('filter-unlabeled').checked;
-        if (unlabeledOnly) {
-            this.filteredTiles = this.tiles.filter(t => !this.labeledSet.has(t));
-        } else {
-            this.filteredTiles = [...this.tiles];
-        }
+        const splitSet = (this.splits && this.splitFilter !== 'all')
+            ? new Set(this.splits[this.splitFilter] || [])
+            : null;
+
+        this.filteredTiles = this.tiles.filter(t => {
+            if (unlabeledOnly && this.labeledSet.has(t)) return false;
+            if (splitSet && !splitSet.has(t)) return false;
+            return true;
+        });
         this.populateSelect();
         this.renderThumbnails();
     },
@@ -614,6 +644,16 @@ const App = {
             this.navigateTo(parseInt(e.target.value)));
         document.getElementById('filter-unlabeled').addEventListener('change', () =>
             this.applyFilter());
+
+        // Split filter buttons
+        document.querySelectorAll('#split-filter [data-split]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.splitFilter = btn.dataset.split;
+                document.querySelectorAll('#split-filter [data-split]').forEach(b =>
+                    b.classList.toggle('btn-active', b === btn));
+                this.applyFilter();
+            });
+        });
 
         // Folder selection
         document.getElementById('folder-select').addEventListener('change', (e) =>

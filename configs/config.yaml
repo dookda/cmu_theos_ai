@@ -1,106 +1,98 @@
-# ===================================================
-# การตั้งค่าโปรเจกต์ Land Cover & Object Segmentation
-# สำหรับภาพดาวเทียม THEOS
-# ===================================================
-
-# --- ข้อมูลดาวเทียม ---
 data:
-  # พาธไปยังไฟล์ GeoTIFF ต้นฉบับ
-  source_tif: "theos/theos_4326.tif"
-  ndvi_tif: "theos/theos_ndvi_4326.tif"
-  norm_tif: "theos/theos_norm_4326.tif"
-  norm_ndvi_tif: "theos/theos_norm_ndvi_4326.tif"
-  
-  # พาธสำหรับข้อมูลที่ตัดเป็น tiles
-  tiles_dir: "data/tiles"
-  labels_dir: "data/labels"
-  yolo_labels_dir: "data/yolo_labels"
-  falsecolor_tiles_dir: "data_falsecolor/tiles"
-  falsecolor_labels_dir: "data_falsecolor/labels"
-
-  # ลำดับ bands ในไฟล์ GeoTIFF (THEOS: R=1, G=2, B=3, NIR=4)
-  band_order: ["red", "green", "blue", "nir"]
-
-  # ใช้ NIR band เป็น input ช่องที่ 4 (RGBNIR = 4 channels)
+  source_tif: theos/theos_4326.tif
+  ndvi_tif: theos/theos_ndvi_4326.tif
+  norm_tif: theos/theos_norm_4326.tif
+  norm_ndvi_tif: theos/theos_norm_ndvi_4326.tif
+  tiles_dir: data/tiles
+  labels_dir: data/labels
+  yolo_labels_dir: data/yolo_labels
+  falsecolor_tiles_dir: data_falsecolor/tiles
+  falsecolor_labels_dir: data_falsecolor/labels
+  band_order:
+  - red
+  - green
+  - blue
+  - nir
   use_nir: true
-
-  # ขนาด tile
-  tile_size: 512        # ขนาดพิกเซลของแต่ละ tile (512x512)
-  overlap: 64           # จำนวนพิกเซลที่ซ้อนทับกัน
-  
-  # แบ่งข้อมูล
+  tile_size: 512
+  overlap: 64
   train_ratio: 0.7
   val_ratio: 0.15
   test_ratio: 0.15
-
-# --- คลาสของ Land Cover ---
-# ปรับแต่งตามพื้นที่ศึกษาของคุณ
 classes:
-  - name: "background"       # พื้นหลัง
-    color: [0, 0, 0]
-  - name: "vegetation"       # พืชพรรณ
-    color: [0, 255, 0]
-  - name: "water"            # แหล่งน้ำ
-    color: [0, 0, 255]
-  - name: "urban"            # พื้นที่เมือง/สิ่งปลูกสร้าง
-    color: [255, 0, 0]
-  - name: "agriculture"      # พื้นที่เกษตรกรรม
-    color: [255, 255, 0]
-  - name: "bare_soil"        # ดินเปล่า
-    color: [139, 69, 19]
-  - name: "road"             # ถนน
-    color: [128, 128, 128]
-
-num_classes: 7
-
-# --- การตั้งค่า Semantic Segmentation (DeepLabV3, UNet, HRNet) ---
+- name: background
+  color:
+  - 0
+  - 0
+  - 0
+- name: vegetation
+  color:
+  - 0
+  - 255
+  - 0
+- name: water
+  color:
+  - 0
+  - 0
+  - 255
+- name: urban
+  color:
+  - 255
+  - 0
+  - 0
+- name: agriculture
+  color:
+  - 255
+  - 255
+  - 0
+- name: bare_soil
+  color:
+  - 139
+  - 69
+  - 19
+- name: road
+  color:
+  - 128
+  - 128
+  - 128
+- name: grass
+  color:
+  - 34
+  - 197
+  - 94
+num_classes: 8
 segmentation:
-  # Backbone (encoder) ที่ใช้
   deeplabv3:
-    encoder: "resnet101"
+    encoder: resnet101
     pretrained: true
-    
   unet:
-    encoder: "resnet50"
+    encoder: resnet50
     pretrained: true
-    
   hrnet:
-    encoder: "tu-hrnet_w48"
+    encoder: tu-hrnet_w48
     pretrained: true
-  
-  # Training hyperparameters
   batch_size: 8
   learning_rate: 0.001
   weight_decay: 0.0001
   epochs: 100
-  patience: 15           # early stopping patience
-  scheduler: "cosine"    # cosine, step, plateau
-  
-  # Loss function: ce, dice, focal, combo
-  loss: "combo"
-  
-  # Optimizer: adam, adamw, sgd
-  optimizer: "adamw"
-
-# --- การตั้งค่า YOLO (Object Detection/Segmentation) ---
+  patience: 15
+  scheduler: cosine
+  loss: combo
+  optimizer: adamw
 yolo:
-  model: "yolov8m-seg"   # yolov8n-seg, yolov8s-seg, yolov8m-seg, yolov8l-seg, yolov8x-seg
+  model: yolov8m-seg
   image_size: 640
   batch_size: 16
   epochs: 100
   patience: 20
   learning_rate: 0.01
-  
-  # คลาสสำหรับ Object Detection
   classes:
-    - "building"          # อาคาร
-    - "vehicle"           # ยานพาหนะ
-    - "tree"              # ต้นไม้
-    - "water_body"        # แหล่งน้ำ
-    - "road"              # ถนน
-    - "agricultural_field" # แปลงเกษตร
-
-# --- Augmentation ---
+  - building
+  - vehicle
+  - tree
+  - water_body
+  - road
+  - agricultural_field
 augmentation:
   horizontal_flip: true
   vertical_flip: true
@@ -109,45 +101,22 @@ augmentation:
   random_contrast: 0.2
   gaussian_noise: 0.01
   elastic_transform: false
-
-# --- Hardware / Accelerator (สำหรับ Google Colab) ---
 device:
-  # auto = ตรวจจับอัตโนมัติ (GPU > TPU > CPU)
-  # gpu, tpu, cpu = บังคับใช้ตัวที่ระบุ
-  accelerator: "auto"
-
-  # GPU settings
+  accelerator: auto
   gpu:
-    # จำนวน GPU ที่ใช้ (Colab ฟรี = 1, Colab Pro = 1-2)
     num_gpus: 1
-    # Mixed precision training (fp16) — เร็วขึ้นและใช้ VRAM น้อยลง
     mixed_precision: true
-    # พยายาม compile model ด้วย torch.compile (PyTorch 2.0+)
     torch_compile: false
-    # ใช้ cudnn benchmark เพื่อเพิ่มความเร็ว (เหมาะเมื่อ input size คงที่)
     cudnn_benchmark: true
-
-  # TPU settings (Colab Pro/Pro+)
   tpu:
-    # จำนวน TPU cores (Colab TPU v2 = 8 cores)
     num_cores: 8
-    # Mixed precision สำหรับ TPU (bfloat16)
     mixed_precision: true
-
-  # Memory optimization (สำคัญสำหรับ Colab ที่ RAM/VRAM จำกัด)
   memory:
-    # จำนวน workers สำหรับ DataLoader (Colab แนะนำ 2)
     num_workers: 2
-    # Pin memory เพื่อเพิ่มความเร็วการโอนข้อมูลไป GPU
     pin_memory: true
-    # Gradient accumulation — จำลอง batch ใหญ่ขึ้นโดยไม่ใช้ VRAM เพิ่ม
-    # effective_batch = batch_size × gradient_accumulation_steps
     gradient_accumulation_steps: 4
-    # Gradient checkpointing — ลดการใช้ VRAM แลกกับความเร็ว
     gradient_checkpointing: false
-
-# --- ผลลัพธ์ ---
 output:
-  models_dir: "models"
-  results_dir: "results"
-  log_dir: "results/logs"
+  models_dir: models
+  results_dir: results
+  log_dir: results/logs
