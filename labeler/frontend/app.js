@@ -592,6 +592,15 @@ const App = {
             b.classList.toggle('btn-active', b.dataset.tool === tool));
     },
 
+    toggleLeftPanel() {
+        document.getElementById('sidebar-left').classList.toggle('sidebar-collapsed');
+        document.getElementById('sidebar-thumb').classList.toggle('sidebar-collapsed');
+    },
+
+    toggleRightPanel() {
+        document.getElementById('sidebar-right').classList.toggle('sidebar-collapsed');
+    },
+
     // --- Event listeners ---
 
     setupEventListeners() {
@@ -602,6 +611,35 @@ const App = {
         interCanvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
         interCanvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
         interCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // Touch events on canvas (single-touch → SAM click / brush paint)
+        interCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                const t = e.touches[0];
+                this.onMouseDown({ clientX: t.clientX, clientY: t.clientY, button: 0 });
+            }
+        }, { passive: false });
+
+        interCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                const t = e.touches[0];
+                this.onMouseMove({ clientX: t.clientX, clientY: t.clientY });
+            }
+        }, { passive: false });
+
+        interCanvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (e.changedTouches.length > 0) {
+                const t = e.changedTouches[0];
+                this.onMouseUp({ clientX: t.clientX, clientY: t.clientY, button: 0 });
+            }
+        }, { passive: false });
+
+        // Sidebar toggle buttons
+        document.getElementById('btn-toggle-left').addEventListener('click', () => this.toggleLeftPanel());
+        document.getElementById('btn-toggle-right').addEventListener('click', () => this.toggleRightPanel());
 
         // Tool tabs (SAM / Brush / K-Means)
         const tabPanels = ['sam', 'brush', 'kmeans'];

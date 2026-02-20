@@ -2,12 +2,53 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ===== Tablet / Touch compatibility ===== */
+
+/* Disable browser touch gestures on canvas so we handle them manually */
+#canvas-viewport,
+#interaction-canvas {
+    touch-action: none;
+}
+
+/* Prevent double-tap zoom on buttons */
+button, .btn, select, input[type="range"] {
+    touch-action: manipulation;
+}
+
+/* Collapsible sidebars */
+#sidebar-left,
+#sidebar-thumb,
+#sidebar-right {
+    transition: width 0.2s ease, min-width 0.2s ease, opacity 0.15s ease;
+    min-width: 0;
+}
+
+.sidebar-collapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    opacity: 0;
+    border: none !important;
+    padding: 0 !important;
+}
+
+/* Make delete (×) always visible on touch devices (no hover) */
+@media (hover: none) {
+    .class-delete {
+        opacity: 0.35 !important;
+    }
+    .class-delete:active {
+        opacity: 1 !important;
+    }
+}
+
 /* ===== Class buttons (rendered dynamically by JS) ===== */
 .class-btn {
     display: flex;
     align-items: center;
     gap: 8px;
     width: 100%;
+    min-height: 36px;
     padding: 8px 10px;
     border: 2px solid transparent;
     border-radius: var(--rounded-btn, 0.5rem);

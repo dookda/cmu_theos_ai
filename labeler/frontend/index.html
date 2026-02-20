@@ -11,7 +11,7 @@
 <body class="bg-base-200 h-screen flex flex-row overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="w-56 bg-base-100 border-r border-base-300 flex flex-col overflow-hidden flex-shrink-0">
+    <aside id="sidebar-left" class="w-56 bg-base-100 border-r border-base-300 flex flex-col overflow-hidden flex-shrink-0">
         <div class="px-4 pt-4 pb-3 border-b border-base-300">
             <h1 class="text-lg font-bold text-primary">Dabeler</h1>
         </div>
@@ -84,7 +84,7 @@
     </aside>
 
     <!-- Thumbnail strip -->
-    <div id="thumbnail-panel" class="w-28 bg-base-100 border-r border-base-300 flex flex-col overflow-hidden flex-shrink-0">
+    <div id="sidebar-thumb" class="w-28 bg-base-100 border-r border-base-300 flex flex-col overflow-hidden flex-shrink-0">
         <div class="px-2 py-2 border-b border-base-300">
             <span class="text-[11px] font-semibold text-base-content/40 uppercase tracking-wider">Tiles</span>
         </div>
@@ -95,16 +95,24 @@
     <div class="flex-1 flex flex-col overflow-hidden">
 
         <!-- Top bar -->
-        <header class="navbar bg-base-100 border-b border-base-300 min-h-0 px-6 py-2 gap-4">
+        <header class="navbar bg-base-100 border-b border-base-300 min-h-0 px-3 py-2 gap-2 flex-wrap">
+            <button id="btn-toggle-left" class="btn btn-ghost btn-sm btn-square flex-shrink-0" title="Toggle sidebar">☰</button>
             <div class="flex items-center gap-2">
-                <span class="text-xs font-medium text-base-content/40">Folder:</span>
-                <select id="folder-select" class="select select-bordered select-xs max-w-[180px]"></select>
+                <span class="text-xs font-medium text-base-content/40 hidden sm:inline">Folder:</span>
+                <select id="folder-select" class="select select-bordered select-xs max-w-[140px]"></select>
             </div>
-            <div class="flex-1 max-w-xs">
+            <div class="flex-1 max-w-xs min-w-[80px]">
                 <progress id="progress-fill" class="progress progress-primary w-full" value="0" max="100"></progress>
             </div>
             <span id="progress-text" class="text-xs font-medium text-base-content/60">0 / 0</span>
-            <div id="status-msg" class="text-xs font-medium text-primary min-w-[80px]"></div>
+            <div id="split-filter" class="join hidden">
+                <button class="join-item btn btn-xs btn-active" data-split="all">All</button>
+                <button class="join-item btn btn-xs" data-split="train">Train</button>
+                <button class="join-item btn btn-xs" data-split="val">Val</button>
+                <button class="join-item btn btn-xs" data-split="test">Test</button>
+            </div>
+            <div id="status-msg" class="text-xs font-medium text-primary min-w-[60px]"></div>
+            <button id="btn-toggle-right" class="btn btn-ghost btn-sm btn-square flex-shrink-0" title="Toggle info panel">⊞</button>
         </header>
 
         <!-- Canvas area -->
@@ -156,18 +164,12 @@
                 <input type="checkbox" id="filter-unlabeled" class="checkbox checkbox-xs checkbox-primary">
                 <span class="label-text text-xs">Unlabeled only</span>
             </label>
-            <div id="split-filter" class="join hidden">
-                <button class="join-item btn btn-xs btn-active" data-split="all">All</button>
-                <button class="join-item btn btn-xs" data-split="train">Train</button>
-                <button class="join-item btn btn-xs" data-split="val">Val</button>
-                <button class="join-item btn btn-xs" data-split="test">Test</button>
-            </div>
         </nav>
 
     </div>
 
     <!-- Right panel -->
-    <aside class="w-48 bg-base-100 border-l border-base-300 flex flex-col overflow-hidden flex-shrink-0">
+    <aside id="sidebar-right" class="w-48 bg-base-100 border-l border-base-300 flex flex-col overflow-hidden flex-shrink-0">
         <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
 
             <!-- Export Formats -->

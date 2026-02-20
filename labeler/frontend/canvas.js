@@ -126,6 +126,57 @@ const Canvas = {
         viewport.addEventListener('auxclick', (e) => {
             if (e.button === 1) e.preventDefault();
         });
+
+        // Two-finger pinch-to-zoom and pan
+        let lastPinchDist = null;
+        let lastPinchMidX = null;
+        let lastPinchMidY = null;
+
+        viewport.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                lastPinchDist = Math.sqrt(dx * dx + dy * dy);
+                lastPinchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                lastPinchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            }
+        }, { passive: false });
+
+        viewport.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && lastPinchDist !== null) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                const rect = viewport.getBoundingClientRect();
+
+                // Zoom toward pinch midpoint
+                const newZoom = Math.max(0.5, Math.min(5, this.zoom * (dist / lastPinchDist)));
+                const mx = midX - rect.left;
+                const my = midY - rect.top;
+                this.panX = mx - (mx - this.panX) * (newZoom / this.zoom);
+                this.panY = my - (my - this.panY) * (newZoom / this.zoom);
+
+                // Pan with finger movement
+                this.panX += midX - lastPinchMidX;
+                this.panY += midY - lastPinchMidY;
+
+                this.zoom = newZoom;
+                lastPinchDist = dist;
+                lastPinchMidX = midX;
+                lastPinchMidY = midY;
+                this.applyTransform();
+            }
+        }, { passive: false });
+
+        viewport.addEventListener('touchend', () => {
+            lastPinchDist = null;
+            lastPinchMidX = null;
+            lastPinchMidY = null;
+        });
     },
 
     applyTransform() {
