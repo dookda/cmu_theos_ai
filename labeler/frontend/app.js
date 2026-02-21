@@ -656,6 +656,10 @@ const App = {
         document.getElementById('btn-toggle-left').addEventListener('click', () => this.toggleLeftPanel());
         document.getElementById('btn-toggle-right').addEventListener('click', () => this.toggleRightPanel());
 
+        // Shortcuts modal
+        document.getElementById('btn-shortcuts').addEventListener('click', () =>
+            document.getElementById('modal-shortcuts').showModal());
+
         // Tool tabs (SAM / Brush / K-Means)
         const tabPanels = ['sam', 'brush', 'kmeans'];
         document.querySelectorAll('#tool-tabs .tab').forEach(tab => {
@@ -803,6 +807,7 @@ const App = {
                     document.getElementById('split-count-train').textContent = data.train;
                     document.getElementById('split-count-val').textContent   = data.val;
                     document.getElementById('split-count-test').textContent  = data.test;
+                    document.getElementById('split-done-badge').classList.remove('hidden');
                     this._updateSplitFilterUI();
                     this.applyFilter();
                     this.toast(`Split: ${data.train} train / ${data.val} val / ${data.test} test`, 'success');
@@ -876,6 +881,9 @@ const App = {
                 const data = await res.json();
                 if (res.ok) {
                     this.toast(`Created ${data.created} augmented tiles from ${data.augmented} source tiles`, 'success');
+                    const augBadge = document.getElementById('aug-done-badge');
+                    augBadge.textContent = `+${data.created}`;
+                    augBadge.classList.remove('hidden');
                     await this.loadTileList();
                 } else {
                     this.toast(data.detail || 'Augmentation failed');

@@ -10,7 +10,7 @@
 </head>
 <body class="bg-base-200 h-screen flex flex-row overflow-hidden">
 
-    <!-- Sidebar -->
+    <!-- Left Sidebar: tools & classes -->
     <aside id="sidebar-left" class="w-56 bg-base-100 border-r border-base-300 flex flex-col overflow-hidden flex-shrink-0">
         <div class="px-4 pt-4 pb-3 border-b border-base-300">
             <h1 class="text-lg font-bold text-primary">Dabeler</h1>
@@ -85,8 +85,11 @@
 
     <!-- Thumbnail strip -->
     <div id="sidebar-thumb" class="w-28 bg-base-100 border-r border-base-300 flex flex-col overflow-hidden flex-shrink-0">
-        <div class="px-2 py-2 border-b border-base-300">
-            <span class="text-[11px] font-semibold text-base-content/40 uppercase tracking-wider">Tiles</span>
+        <!-- Upload zone lives here — close to the tiles it adds -->
+        <div id="upload-zone" class="flex items-center justify-center gap-1.5 border-b border-dashed border-base-300 px-2 py-2 cursor-pointer hover:bg-primary/5 hover:border-primary transition-colors" title="Click or drop images to upload tiles">
+            <input type="file" id="upload-input" multiple accept="image/png,image/jpeg" class="hidden">
+            <span class="text-sm leading-none opacity-50">⬆</span>
+            <span class="text-[11px] text-base-content/40 whitespace-nowrap">Upload</span>
         </div>
         <div id="thumbnail-list" class="flex-1 overflow-y-auto p-1.5 flex flex-col gap-1.5"></div>
     </div>
@@ -94,7 +97,7 @@
     <!-- Main content area -->
     <div class="flex-1 flex flex-col overflow-hidden">
 
-        <!-- Top bar -->
+        <!-- Top bar — simplified -->
         <header class="navbar bg-base-100 border-b border-base-300 min-h-0 px-3 py-2 gap-2 flex-wrap">
             <button id="btn-toggle-left" class="btn btn-ghost btn-sm btn-square flex-shrink-0" title="Toggle sidebar">☰</button>
             <div class="flex items-center gap-2">
@@ -111,14 +114,8 @@
                 <button class="join-item btn btn-xs" data-split="val">Val</button>
                 <button class="join-item btn btn-xs" data-split="test">Test</button>
             </div>
-            <!-- Upload zone -->
-            <div id="upload-zone" class="flex items-center gap-1.5 border border-dashed border-base-300 rounded-lg px-3 py-1.5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors flex-shrink-0" title="Upload tile images">
-                <input type="file" id="upload-input" multiple accept="image/png,image/jpeg" class="hidden">
-                <span class="text-base leading-none">⬆</span>
-                <span class="text-xs text-base-content/50 whitespace-nowrap">Upload tiles</span>
-            </div>
             <div id="status-msg" class="text-xs font-medium text-primary min-w-[60px]"></div>
-            <button id="btn-toggle-right" class="btn btn-ghost btn-sm btn-square flex-shrink-0" title="Toggle info panel">⊞</button>
+            <button id="btn-toggle-right" class="btn btn-ghost btn-sm btn-square flex-shrink-0" title="Toggle workflow panel">⊞</button>
         </header>
 
         <!-- Canvas area -->
@@ -156,31 +153,48 @@
             </div>
         </section>
 
-        <!-- Bottom nav -->
-        <nav class="flex items-center justify-center gap-3 px-6 py-2.5 bg-base-100 border-t border-base-300">
+        <!-- Bottom nav — edit actions left, navigation centre, delete isolated right -->
+        <nav class="flex items-center gap-2 px-4 py-2.5 bg-base-100 border-t border-base-300">
+            <!-- Edit actions -->
             <button id="btn-undo" title="Undo (Z)" class="btn btn-sm btn-ghost">Undo</button>
-            <button id="btn-delete-tile" title="Delete tile and label" class="btn btn-sm btn-error btn-outline">Delete</button>
             <button id="btn-clear" title="Clear" class="btn btn-sm btn-outline">Clear</button>
             <button id="btn-save" title="Save (S)" class="btn btn-sm btn-primary">Save</button>
+
             <div class="divider divider-horizontal mx-0"></div>
-            <button id="btn-prev" title="Previous tile" class="btn btn-sm btn-primary btn-outline">&larr; Prev</button>
-            <select id="tile-select" class="select select-bordered select-sm max-w-[220px]"></select>
-            <button id="btn-next" title="Next tile" class="btn btn-sm btn-primary btn-outline">Next &rarr;</button>
-            <label class="label cursor-pointer gap-2">
+
+            <!-- Navigation -->
+            <button id="btn-prev" title="Previous tile" class="btn btn-sm btn-ghost">&larr;</button>
+            <select id="tile-select" class="select select-bordered select-sm max-w-[180px]"></select>
+            <button id="btn-next" title="Next tile" class="btn btn-sm btn-ghost">&rarr;</button>
+            <label class="label cursor-pointer gap-2 ml-1">
                 <input type="checkbox" id="filter-unlabeled" class="checkbox checkbox-xs checkbox-primary">
                 <span class="label-text text-xs">Unlabeled only</span>
             </label>
+
+            <!-- Delete — isolated far right with spacer -->
+            <div class="flex-1"></div>
+            <div class="divider divider-horizontal mx-0"></div>
+            <button id="btn-delete-tile" title="Delete tile and label" class="btn btn-sm btn-error btn-outline">Delete</button>
         </nav>
 
     </div>
 
-    <!-- Right panel -->
+    <!-- Right panel — numbered workflow steps -->
     <aside id="sidebar-right" class="w-48 bg-base-100 border-l border-base-300 flex flex-col overflow-hidden flex-shrink-0">
+        <div class="px-3 pt-3 pb-2 border-b border-base-300">
+            <span class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Workflow</span>
+        </div>
         <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
 
-            <!-- Dataset Split -->
+            <!-- Step 1: Dataset Split -->
             <div>
-                <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-2">Dataset Split</div>
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="badge badge-sm badge-neutral font-mono text-[10px]">1</span>
+                        <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Split</span>
+                    </div>
+                    <span id="split-done-badge" class="badge badge-xs badge-success hidden">✓ done</span>
+                </div>
                 <!-- Section labels — widths updated by JS to match bar segments -->
                 <div class="flex text-center mb-1 overflow-hidden" style="min-height:38px">
                     <div id="split-lbl-train" class="overflow-hidden flex-shrink-0" style="width:70%">
@@ -210,9 +224,15 @@
 
             <div class="divider my-0"></div>
 
-            <!-- Augmentation -->
+            <!-- Step 2: Augmentation -->
             <div>
-                <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-2">Augmentation</div>
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="badge badge-sm badge-neutral font-mono text-[10px]">2</span>
+                        <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Augment</span>
+                    </div>
+                    <span id="aug-done-badge" class="badge badge-xs badge-success hidden"></span>
+                </div>
                 <div class="flex flex-col gap-1">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="aug-flip_h" class="checkbox checkbox-xs" checked>
@@ -253,9 +273,12 @@
 
             <div class="divider my-0"></div>
 
-            <!-- Export Dataset -->
+            <!-- Step 3: Export Dataset -->
             <div>
-                <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-2">Export Dataset</div>
+                <div class="flex items-center gap-1.5 mb-2">
+                    <span class="badge badge-sm badge-neutral font-mono text-[10px]">3</span>
+                    <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Export</span>
+                </div>
                 <select id="export-zip-format" class="select select-bordered select-xs w-full mb-2">
                     <option value="yolo_detect">YOLO Detection</option>
                     <option value="yolo_segment">YOLO Segmentation</option>
@@ -271,28 +294,11 @@
                 <button id="btn-reexport-yolo" class="btn btn-ghost btn-xs w-full">Re-create Label Files</button>
             </div>
 
-            <div class="divider my-0"></div>
-
-            <!-- Shortcuts -->
-            <div>
-                <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-2">Shortcuts</div>
-                <div class="text-[11px] leading-relaxed text-base-content/30 flex flex-col gap-0.5">
-                    <span><kbd class="kbd kbd-xs">1-7</kbd> Select class</span>
-                    <span><kbd class="kbd kbd-xs">S</kbd> Save</span>
-                    <span><kbd class="kbd kbd-xs">Z</kbd> Undo</span>
-                    <span><kbd class="kbd kbd-xs">&larr;&rarr;</kbd> Prev/Next</span>
-                    <span><kbd class="kbd kbd-xs">Click</kbd> SAM point</span>
-                    <span><kbd class="kbd kbd-xs">R-click</kbd> Neg point</span>
-                    <span><kbd class="kbd kbd-xs">Drag</kbd> SAM box</span>
-                    <span><kbd class="kbd kbd-xs">Enter</kbd> Accept</span>
-                    <span><kbd class="kbd kbd-xs">Esc</kbd> Reject</span>
-                    <span><kbd class="kbd kbd-xs">Scroll</kbd> Zoom</span>
-                    <span><kbd class="kbd kbd-xs">Mid</kbd> Pan</span>
-                </div>
-            </div>
-
         </div>
     </aside>
+
+    <!-- Floating shortcuts button -->
+    <button id="btn-shortcuts" class="fixed bottom-4 right-4 btn btn-circle btn-sm btn-neutral z-40 opacity-40 hover:opacity-100 transition-opacity" title="Keyboard shortcuts">?</button>
 
     <!-- Confirm Modal -->
     <dialog id="modal-confirm" class="modal">
@@ -341,6 +347,30 @@
             <div class="modal-action mt-4">
                 <button id="btn-kmeans-cancel" class="btn btn-ghost btn-sm">Cancel</button>
                 <button id="btn-kmeans-apply" class="btn btn-primary btn-sm">Apply to Canvas</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <!-- Shortcuts Modal -->
+    <dialog id="modal-shortcuts" class="modal">
+        <div class="modal-box w-72">
+            <h3 class="font-bold text-base mb-4">Keyboard Shortcuts</h3>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                <span class="text-base-content/50">Select class</span><kbd class="kbd kbd-sm justify-self-end">1 – 7</kbd>
+                <span class="text-base-content/50">Save</span><kbd class="kbd kbd-sm justify-self-end">S</kbd>
+                <span class="text-base-content/50">Undo</span><kbd class="kbd kbd-sm justify-self-end">Z</kbd>
+                <span class="text-base-content/50">Prev / Next</span><kbd class="kbd kbd-sm justify-self-end">← →</kbd>
+                <span class="text-base-content/50">SAM point</span><kbd class="kbd kbd-sm justify-self-end">Click</kbd>
+                <span class="text-base-content/50">SAM neg point</span><kbd class="kbd kbd-sm justify-self-end">R-click</kbd>
+                <span class="text-base-content/50">SAM box</span><kbd class="kbd kbd-sm justify-self-end">Drag</kbd>
+                <span class="text-base-content/50">Accept SAM</span><kbd class="kbd kbd-sm justify-self-end">Enter</kbd>
+                <span class="text-base-content/50">Reject SAM</span><kbd class="kbd kbd-sm justify-self-end">Esc</kbd>
+                <span class="text-base-content/50">Zoom</span><kbd class="kbd kbd-sm justify-self-end">Scroll</kbd>
+                <span class="text-base-content/50">Pan</span><kbd class="kbd kbd-sm justify-self-end">Mid drag</kbd>
+            </div>
+            <div class="modal-action mt-5">
+                <form method="dialog"><button class="btn btn-sm btn-ghost">Close</button></form>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>
