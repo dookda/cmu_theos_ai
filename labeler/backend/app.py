@@ -1,6 +1,6 @@
 import os
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -8,7 +8,7 @@ from .config import TILES_DIR, LABELS_DIR, EMBEDDINGS_DIR, TILE_SIZE, load_class
 from .label_io import (
     load_label, save_label, mask_to_base64, base64_to_mask, list_labeled_files,
     mask_to_yolo_detect, mask_to_yolo_segment, save_yolo_detect, save_yolo_segment,
-    delete_tile_files, run_kmeans,
+    delete_tile_files, run_kmeans, augment_tile, mask_to_coco_annotations, VALID_TRANSFORMS,
 )
 from .sam_engine import sam_engine
 
@@ -104,6 +104,12 @@ class SplitRequest(BaseModel):
 
 class KMeansRequest(BaseModel):
     n_clusters: int
+
+
+class AugmentRequest(BaseModel):
+    transforms: list[str]   # subset of VALID_TRANSFORMS
+    n_random: int = 3        # copies per random transform
+    labeled_only: bool = True
 
 
 # --- Folder endpoints ---
@@ -239,6 +245,66 @@ def delete_tile(filename: str):
     except OSError as e:
         raise HTTPException(500, f"Failed to delete: {e}")
     return {"status": "deleted", "filename": filename, "deleted": result["deleted"]}
+
+
+# --- Upload endpoint ---
+
+@app.post("/api/upload-tiles")
+async def upload_tiles(files: list[UploadFile] = File(...)):
+    """Upload one or more tile images (PNG/JPG) to the current tiles directory."""
+    td = _tiles_dir()
+    os.makedirs(td, exist_ok=True)
+    allowed = {".png", ".jpg", ".jpeg"}
+    uploaded, skipped = [], []
+    for f in files:
+        ext = os.path.splitext(f.filename or "")[1].lower()
+        if ext not in allowed:
+            skipped.append(f.filename)
+            continue
+        dest = os.path.join(td, os.path.basename(f.filename))
+        data = await f.read()
+        with open(dest, "wb") as fp:
+            fp.write(data)
+        uploaded.append(os.path.basename(f.filename))
+    return {"uploaded": uploaded, "skipped": skipped}
+
+
+# --- Augmentation endpoint ---
+
+@app.post("/api/augment")
+def augment_dataset(req: AugmentRequest):
+    """Apply augmentation transforms to labeled (or all) tiles in the current folder."""
+    invalid = set(req.transforms) - VALID_TRANSFORMS
+    if invalid:
+        raise HTTPException(400, f"Unknown transforms: {sorted(invalid)}. Valid: {sorted(VALID_TRANSFORMS)}")
+    if not req.transforms:
+        raise HTTPException(400, "No transforms specified")
+
+    folder = _get_folder()
+    td = _tiles_dir()
+    labeled = list_labeled_files(folder)
+
+    if req.labeled_only:
+        candidates = sorted(labeled)
+    else:
+        candidates = sorted([
+            f for f in os.listdir(td)
+            if f.endswith(".png") and "nir" not in f and "_aug_" not in f
+            and os.path.isfile(os.path.join(td, f))
+        ])
+
+    all_created = []
+    for filename in candidates:
+        mask = load_label(filename, folder)
+        if mask is None:
+            continue
+        try:
+            result = augment_tile(filename, mask, req.transforms, td, folder, req.n_random)
+            all_created.extend(result["created"])
+        except Exception:
+            continue
+
+    return {"augmented": len(candidates), "created": len(all_created), "files": all_created}
 
 
 # --- Label endpoints ---
@@ -407,6 +473,105 @@ def get_config():
         "classes": load_classes(),
         "tile_size": TILE_SIZE,
     }
+
+
+# --- Export ZIP endpoint ---
+
+@app.get("/api/export-zip")
+def export_zip(format: str = "yolo_detect"):
+    """Export dataset as a ZIP with train/val/test splits in the selected label format."""
+    import json, io, zipfile
+
+    valid_formats = {"semantic", "yolo_detect", "yolo_segment", "coco"}
+    if format not in valid_formats:
+        raise HTTPException(400, f"format must be one of {sorted(valid_formats)}")
+
+    td = _tiles_dir()
+    splits_path = os.path.join(td, "splits.json")
+    if not os.path.exists(splits_path):
+        raise HTTPException(400, "No splits found. Generate splits first.")
+
+    with open(splits_path, "r", encoding="utf-8") as f:
+        splits = json.load(f)
+
+    folder = _get_folder()
+    label_base = os.path.join(LABELS_DIR, folder) if folder else LABELS_DIR
+
+    classes = load_classes()
+    # COCO / YOLO category list (skip background at index 0)
+    label_classes = [c for c in classes if c["index"] != 0]
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+
+        if format == "coco":
+            # Build one COCO JSON per split
+            categories = [{"id": c["index"], "name": c["name"]} for c in label_classes]
+            for split_name in ("train", "val", "test"):
+                coco_images, coco_anns = [], []
+                ann_id = 1
+                for img_id, filename in enumerate(splits.get(split_name, []), start=1):
+                    img_path = os.path.join(td, filename)
+                    if os.path.exists(img_path):
+                        zf.write(img_path, f"{split_name}/images/{filename}")
+                    coco_images.append({
+                        "id": img_id, "file_name": filename,
+                        "width": TILE_SIZE, "height": TILE_SIZE,
+                    })
+                    mask = load_label(filename, folder)
+                    if mask is not None:
+                        anns = mask_to_coco_annotations(mask, img_id, ann_id)
+                        coco_anns.extend(anns)
+                        ann_id += len(anns)
+
+                coco_json = json.dumps({
+                    "info": {"description": "Exported from Dabeler", "version": "1.0"},
+                    "categories": categories,
+                    "images": coco_images,
+                    "annotations": coco_anns,
+                }, indent=2)
+                zf.writestr(f"annotations/{split_name}.json", coco_json)
+
+        else:
+            for split_name in ("train", "val", "test"):
+                for filename in splits.get(split_name, []):
+                    stem = os.path.splitext(filename)[0]
+
+                    img_path = os.path.join(td, filename)
+                    if os.path.exists(img_path):
+                        zf.write(img_path, f"{split_name}/images/{filename}")
+
+                    if format == "semantic":
+                        lbl = os.path.join(label_base, "semantic", filename)
+                        if os.path.exists(lbl):
+                            zf.write(lbl, f"{split_name}/masks/{filename}")
+                    elif format == "yolo_detect":
+                        lbl = os.path.join(label_base, "yolo_detect", f"{stem}.txt")
+                        if os.path.exists(lbl):
+                            zf.write(lbl, f"{split_name}/labels/{stem}.txt")
+                    elif format == "yolo_segment":
+                        lbl = os.path.join(label_base, "yolo_segment", f"{stem}.txt")
+                        if os.path.exists(lbl):
+                            zf.write(lbl, f"{split_name}/labels/{stem}.txt")
+
+            if format in ("yolo_detect", "yolo_segment"):
+                names = [c["name"] for c in label_classes]
+                yaml_lines = [
+                    "train: ../train/images",
+                    "val:   ../val/images",
+                    "test:  ../test/images",
+                    "",
+                    f"nc: {len(names)}",
+                    f"names: {names}",
+                ]
+                zf.writestr("data.yaml", "\n".join(yaml_lines) + "\n")
+
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="dataset_{format}.zip"'},
+    )
 
 
 # --- Serve frontend ---

@@ -111,6 +111,12 @@
                 <button class="join-item btn btn-xs" data-split="val">Val</button>
                 <button class="join-item btn btn-xs" data-split="test">Test</button>
             </div>
+            <!-- Upload zone -->
+            <div id="upload-zone" class="flex items-center gap-1.5 border border-dashed border-base-300 rounded-lg px-3 py-1.5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors flex-shrink-0" title="Upload tile images">
+                <input type="file" id="upload-input" multiple accept="image/png,image/jpeg" class="hidden">
+                <span class="text-base leading-none">⬆</span>
+                <span class="text-xs text-base-content/50 whitespace-nowrap">Upload tiles</span>
+            </div>
             <div id="status-msg" class="text-xs font-medium text-primary min-w-[60px]"></div>
             <button id="btn-toggle-right" class="btn btn-ghost btn-sm btn-square flex-shrink-0" title="Toggle info panel">⊞</button>
         </header>
@@ -222,6 +228,64 @@
                 </div>
                 <div id="split-preview" class="text-[11px] text-base-content/30 mt-1.5 hidden"></div>
                 <button id="btn-generate-split" class="btn btn-accent btn-xs w-full mt-2">Generate Split</button>
+            </div>
+
+            <div class="divider my-0"></div>
+
+            <!-- Augmentation -->
+            <div>
+                <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-2">Augmentation</div>
+                <div class="flex flex-col gap-1">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="aug-flip_h" class="checkbox checkbox-xs" checked>
+                        <span class="text-xs">Flip Horizontal</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="aug-flip_v" class="checkbox checkbox-xs" checked>
+                        <span class="text-xs">Flip Vertical</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="aug-rotate_90" class="checkbox checkbox-xs">
+                        <span class="text-xs">Rotate 90° / 180° / 270°</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="aug-brightness" class="checkbox checkbox-xs">
+                        <span class="text-xs">Brightness / Contrast</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="aug-blur" class="checkbox checkbox-xs">
+                        <span class="text-xs">Blur</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="aug-crop_zoom" class="checkbox checkbox-xs">
+                        <span class="text-xs">Crop / Zoom</span>
+                    </label>
+                </div>
+                <div class="flex justify-between mt-2 mb-0.5">
+                    <span class="text-xs text-base-content/60">Copies (random aug)</span>
+                    <span class="text-xs font-mono text-base-content/60" id="aug-n-val">3</span>
+                </div>
+                <input type="range" id="aug-n" min="1" max="10" value="3" class="range range-xs w-full">
+                <label class="flex items-center gap-2 mt-2 cursor-pointer">
+                    <input type="checkbox" id="aug-labeled-only" class="checkbox checkbox-xs" checked>
+                    <span class="text-xs">Labeled tiles only</span>
+                </label>
+                <button id="btn-augment" class="btn btn-warning btn-xs w-full mt-2">Run Augmentation</button>
+            </div>
+
+            <div class="divider my-0"></div>
+
+            <!-- Export Dataset -->
+            <div>
+                <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-2">Export Dataset</div>
+                <select id="export-zip-format" class="select select-bordered select-xs w-full mb-2">
+                    <option value="yolo_detect">YOLO Detection</option>
+                    <option value="yolo_segment">YOLO Segmentation</option>
+                    <option value="semantic">Semantic Masks</option>
+                    <option value="coco">COCO Instance Segmentation</option>
+                </select>
+                <button id="btn-export-zip" class="btn btn-primary btn-xs w-full">Export as ZIP</button>
+                <div class="text-[11px] text-base-content/30 mt-1">Requires splits to be generated first</div>
             </div>
 
             <div class="divider my-0"></div>

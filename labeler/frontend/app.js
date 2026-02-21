@@ -639,6 +639,41 @@ const App = {
             }
         }, { passive: false });
 
+        // Upload tiles (drag-and-drop zone + file picker)
+        const uploadZone  = document.getElementById('upload-zone');
+        const uploadInput = document.getElementById('upload-input');
+
+        const doUpload = async (files) => {
+            if (!files || files.length === 0) return;
+            const fd = new FormData();
+            for (const f of files) fd.append('files', f);
+            this.setStatus('Uploading...');
+            try {
+                const res  = await fetch('/api/upload-tiles', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (res.ok) {
+                    this.toast(`Uploaded ${data.uploaded.length} tile(s)${data.skipped.length ? `, skipped ${data.skipped.length}` : ''}`, 'success');
+                    await this.loadTileList();
+                } else {
+                    this.toast(data.detail || 'Upload failed');
+                }
+            } catch (e) {
+                this.toast('Upload failed: ' + e.message);
+            } finally {
+                this.setStatus('Ready');
+            }
+        };
+
+        uploadZone.addEventListener('click', () => uploadInput.click());
+        uploadInput.addEventListener('change', (e) => { doUpload(e.target.files); uploadInput.value = ''; });
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('border-primary'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('border-primary'));
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('border-primary');
+            doUpload(e.dataTransfer.files);
+        });
+
         // Sidebar toggle buttons
         document.getElementById('btn-toggle-left').addEventListener('click', () => this.toggleLeftPanel());
         document.getElementById('btn-toggle-right').addEventListener('click', () => this.toggleRightPanel());
@@ -822,6 +857,37 @@ const App = {
                 } else {
                     this.toast(`Re-export failed: ${data.detail || res.statusText}`);
                 }
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                this.setStatus('Ready');
+            }
+        });
+
+        // Export dataset as ZIP
+        document.getElementById('btn-export-zip').addEventListener('click', async () => {
+            const format = document.getElementById('export-zip-format').value;
+            const btn = document.getElementById('btn-export-zip');
+            btn.classList.add('loading');
+            btn.disabled = true;
+            this.setStatus('Building ZIP...');
+            try {
+                const res = await fetch(`/api/export-zip?format=${format}`);
+                if (!res.ok) {
+                    const data = await res.json();
+                    this.toast(data.detail || 'Export failed');
+                    return;
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dataset_${format}.zip`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.toast('Dataset ZIP downloaded', 'success');
+            } catch (e) {
+                this.toast('Export failed: ' + e.message);
             } finally {
                 btn.classList.remove('loading');
                 btn.disabled = false;

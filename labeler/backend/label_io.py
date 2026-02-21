@@ -1,6 +1,7 @@
 import os
 import base64
 import io
+import random as _random
 import numpy as np
 import cv2
 from PIL import Image
@@ -178,6 +179,127 @@ def run_kmeans(path: str, n_clusters: int, nir_path: str | None = None) -> dict:
         "n_clusters": n_clusters,
         "centers": rgb_centers,
     }
+
+
+_DETERMINISTIC_TRANSFORMS = {"flip_h", "flip_v", "rotate_90", "rotate_180", "rotate_270"}
+_RANDOM_TRANSFORMS = {"brightness", "blur", "crop_zoom"}
+VALID_TRANSFORMS = _DETERMINISTIC_TRANSFORMS | _RANDOM_TRANSFORMS
+
+
+def _apply_transform(img: np.ndarray, mask: np.ndarray, transform: str):
+    if transform == "flip_h":
+        return cv2.flip(img, 1), cv2.flip(mask, 1)
+    if transform == "flip_v":
+        return cv2.flip(img, 0), cv2.flip(mask, 0)
+    if transform == "rotate_90":
+        return cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE), cv2.rotate(mask, cv2.ROTATE_90_CLOCKWISE)
+    if transform == "rotate_180":
+        return cv2.rotate(img, cv2.ROTATE_180), cv2.rotate(mask, cv2.ROTATE_180)
+    if transform == "rotate_270":
+        return cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE), cv2.rotate(mask, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    raise ValueError(f"Unknown transform: {transform}")
+
+
+def _apply_random_transform(img: np.ndarray, mask: np.ndarray, transform: str):
+    if transform == "brightness":
+        factor = _random.uniform(0.6, 1.4)
+        aug = np.clip(img.astype(np.float32) * factor, 0, 255).astype(np.uint8)
+        return aug, mask.copy()
+    if transform == "blur":
+        k = _random.choice([3, 5, 7])
+        return cv2.GaussianBlur(img, (k, k), 0), mask.copy()
+    if transform == "crop_zoom":
+        h, w = img.shape[:2]
+        factor = _random.uniform(0.70, 0.95)
+        ch, cw = int(h * factor), int(w * factor)
+        y0 = _random.randint(0, h - ch)
+        x0 = _random.randint(0, w - cw)
+        aug_img  = cv2.resize(img[y0:y0+ch, x0:x0+cw],  (w, h), interpolation=cv2.INTER_LINEAR)
+        aug_mask = cv2.resize(mask[y0:y0+ch, x0:x0+cw], (w, h), interpolation=cv2.INTER_NEAREST)
+        return aug_img, aug_mask
+    raise ValueError(f"Unknown random transform: {transform}")
+
+
+def augment_tile(filename: str, mask: np.ndarray, transforms: list,
+                 tiles_dir: str, folder: str = "", n_random: int = 3) -> dict:
+    """Apply augmentation transforms to a tile image and its mask.
+
+    Deterministic transforms (flip_h, flip_v, rotate_*) create one copy each.
+    Random transforms (brightness, blur, crop_zoom) create n_random copies each.
+    Returns {"created": [list of new tile filenames]}.
+    """
+    img_path = os.path.join(tiles_dir, filename)
+    img = cv2.imread(img_path)
+    if img is None:
+        raise ValueError(f"Could not read tile: {img_path}")
+
+    stem = os.path.splitext(filename)[0]
+    created = []
+
+    for transform in transforms:
+        if transform not in VALID_TRANSFORMS:
+            continue
+        if transform in _DETERMINISTIC_TRANSFORMS:
+            aug_img, aug_mask = _apply_transform(img, mask, transform)
+            aug_name = f"{stem}_aug_{transform}.png"
+            cv2.imwrite(os.path.join(tiles_dir, aug_name), aug_img)
+            save_label(aug_name, aug_mask.astype(np.uint8), folder)
+            created.append(aug_name)
+        else:
+            for i in range(n_random):
+                aug_img, aug_mask = _apply_random_transform(img, mask, transform)
+                aug_name = f"{stem}_aug_{transform}_{i}.png"
+                cv2.imwrite(os.path.join(tiles_dir, aug_name), aug_img)
+                save_label(aug_name, aug_mask.astype(np.uint8), folder)
+                created.append(aug_name)
+
+    return {"created": created}
+
+
+def mask_to_coco_annotations(mask: np.ndarray, image_id: int, start_ann_id: int) -> list:
+    """Convert a semantic mask to COCO instance segmentation annotation dicts.
+
+    Each connected region per class becomes one annotation with a polygon.
+    category_id equals the mask class value (background=0 is skipped).
+    """
+    annotations = []
+    ann_id = start_ann_id
+
+    for cls in np.unique(mask):
+        if cls == 0:
+            continue
+        binary = (mask == cls).astype(np.uint8)
+        num_labels, labels_map = cv2.connectedComponents(binary)
+
+        for label_id in range(1, num_labels):
+            component = (labels_map == label_id).astype(np.uint8)
+            contours, _ = cv2.findContours(component, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if not contours:
+                continue
+            contour = max(contours, key=cv2.contourArea)
+            area = float(cv2.contourArea(contour))
+            if area < 1 or len(contour) < 3:
+                continue
+
+            epsilon = 0.005 * cv2.arcLength(contour, True)
+            approx = cv2.approxPolyDP(contour, epsilon, True)
+            if len(approx) < 3:
+                approx = contour
+            seg = [float(v) for pt in approx.reshape(-1, 2) for v in pt]
+
+            x1, y1, bw, bh = cv2.boundingRect(contour)
+            annotations.append({
+                "id": ann_id,
+                "image_id": image_id,
+                "category_id": int(cls),
+                "segmentation": [seg],
+                "area": area,
+                "bbox": [float(x1), float(y1), float(bw), float(bh)],
+                "iscrowd": 0,
+            })
+            ann_id += 1
+
+    return annotations
 
 
 def delete_tile_files(filename: str, folder: str, tiles_dir: str, embeddings_dir: str) -> dict:
