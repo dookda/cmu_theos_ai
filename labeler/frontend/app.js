@@ -864,6 +864,56 @@ const App = {
             }
         });
 
+        // Augmentation
+        document.getElementById('aug-n').addEventListener('input', (e) => {
+            document.getElementById('aug-n-val').textContent = e.target.value;
+        });
+        // Rotate 90 checkbox controls 90/180/270 together
+        document.getElementById('btn-augment').addEventListener('click', async () => {
+            const transformMap = {
+                'aug-flip_h':    'flip_h',
+                'aug-flip_v':    'flip_v',
+                'aug-rotate_90': ['rotate_90', 'rotate_180', 'rotate_270'],
+                'aug-brightness':'brightness',
+                'aug-blur':      'blur',
+                'aug-crop_zoom': 'crop_zoom',
+            };
+            const transforms = [];
+            for (const [id, val] of Object.entries(transformMap)) {
+                if (document.getElementById(id).checked) {
+                    if (Array.isArray(val)) transforms.push(...val);
+                    else transforms.push(val);
+                }
+            }
+            if (transforms.length === 0) { this.toast('Select at least one augmentation'); return; }
+            const btn = document.getElementById('btn-augment');
+            btn.classList.add('loading');
+            btn.disabled = true;
+            this.setStatus('Augmenting...');
+            try {
+                const res = await fetch('/api/augment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        transforms,
+                        n_random: parseInt(document.getElementById('aug-n').value) || 3,
+                        labeled_only: document.getElementById('aug-labeled-only').checked,
+                    }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    this.toast(`Created ${data.created} augmented tiles from ${data.augmented} source tiles`, 'success');
+                    await this.loadTileList();
+                } else {
+                    this.toast(data.detail || 'Augmentation failed');
+                }
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                this.setStatus('Ready');
+            }
+        });
+
         // Export dataset as ZIP
         document.getElementById('btn-export-zip').addEventListener('click', async () => {
             const format = document.getElementById('export-zip-format').value;
