@@ -10,9 +10,14 @@
     touch-action: none;
 }
 
-/* Prevent double-tap zoom on buttons */
-button, .btn, select, input[type="range"] {
+/* Prevent double-tap zoom on buttons and controls */
+button, .btn, select {
     touch-action: manipulation;
+}
+
+/* Range sliders need touch-action: none so touch drags are NOT intercepted as scroll */
+input[type="range"] {
+    touch-action: none;
 }
 
 /* Collapsible sidebars */
@@ -206,6 +211,32 @@ button, .btn, select, input[type="range"] {
 #thumbnail-list::-webkit-scrollbar-thumb {
     background: oklch(var(--bc) / 0.15);
     border-radius: 2px;
+}
+
+/* ===== Dataset Split bar ===== */
+#split-bar {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    cursor: crosshair;
+    user-select: none;
+    touch-action: none;
+    background: linear-gradient(to right, #4ade80 70%, #fbbf24 70% 85%, #f87171 85% 100%);
+}
+
+.split-handle {
+    position: absolute;
+    top: 50%;
+    width: 4px;
+    height: 20px;
+    background: oklch(var(--bc));
+    border-radius: 3px;
+    transform: translate(-50%, -50%);
+    cursor: ew-resize;
+    z-index: 2;
+    touch-action: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
 .hidden { display: none !important; }

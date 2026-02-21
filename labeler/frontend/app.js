@@ -11,6 +11,8 @@ const App = {
     labeledSet: new Set(),
     splits: null,       // {train: [...], val: [...], test: [...]} or null
     splitFilter: 'all', // 'all' | 'train' | 'val' | 'test'
+    splitH1: 70,        // train/val boundary = train%
+    splitH2: 85,        // val/test boundary  = train% + val%
 
     activeTool: 'sam',  // sam, brush, eraser
     isDrawing: false,
@@ -702,56 +704,77 @@ const App = {
             cb.addEventListener('change', () => this.updateExportFormats());
         });
 
-        // Dataset Split — auto-adjust so train + val + test = 100
-        const trainInput = document.getElementById('split-train-pct');
-        const valInput   = document.getElementById('split-val-pct');
-        const testInput  = document.getElementById('split-test-pct');
+        // Dataset Split — two-handle drag bar
+        const splitBar = document.getElementById('split-bar');
+        const MIN_SEG  = 2; // minimum % per segment
 
-        const clamp = (v) => Math.max(1, Math.min(98, v));
-
-        const updateSplitPreview = () => {
-            const train = parseInt(trainInput.value) || 1;
-            const val   = parseInt(valInput.value)   || 1;
-            const test  = parseInt(testInput.value)  || 1;
-            const preview = document.getElementById('split-preview');
+        const updateSplitDisplay = () => {
+            const train = Math.round(this.splitH1);
+            const val   = Math.round(this.splitH2 - this.splitH1);
+            const test  = 100 - train - val;
             const total = this.tiles.length;
-            if (total > 0) {
-                const nTrain = Math.max(1, Math.round(total * train / 100));
-                const nVal   = Math.max(1, Math.round(total * val / 100));
-                const nTest  = Math.max(0, total - nTrain - nVal);
-                preview.textContent = `${total} tiles → ${nTrain} / ${nVal} / ${nTest}`;
-                preview.classList.remove('hidden');
-            } else {
-                preview.classList.add('hidden');
-            }
-        };
 
-        // Sliders: Train and Val are user-controlled; Test = 100 - train - val (read-only)
-        const syncSplit = () => {
-            let train = parseInt(trainInput.value) || 1;
-            let val   = parseInt(valInput.value)   || 1;
-            // Cap val so test >= 1
-            if (train + val > 99) {
-                val = Math.max(1, 99 - train);
-                valInput.value = val;
-            }
-            const test = 100 - train - val;
-            testInput.value = test;
+            splitBar.style.background = `linear-gradient(to right,
+                #4ade80 ${this.splitH1}%,
+                #fbbf24 ${this.splitH1}% ${this.splitH2}%,
+                #f87171 ${this.splitH2}% 100%)`;
+
+            document.getElementById('split-handle-1').style.left = this.splitH1 + '%';
+            document.getElementById('split-handle-2').style.left = this.splitH2 + '%';
+
+            document.getElementById('split-lbl-train').style.width = train + '%';
+            document.getElementById('split-lbl-val').style.width   = val   + '%';
+
             document.getElementById('split-train-val').textContent = train;
             document.getElementById('split-val-val').textContent   = val;
             document.getElementById('split-test-val').textContent  = test;
-            updateSplitPreview();
+
+            if (total > 0) {
+                const nTrain = Math.max(1, Math.round(total * train / 100));
+                const nVal   = Math.max(1, Math.round(total * val   / 100));
+                const nTest  = Math.max(0, total - nTrain - nVal);
+                document.getElementById('split-count-train').textContent = nTrain;
+                document.getElementById('split-count-val').textContent   = nVal;
+                document.getElementById('split-count-test').textContent  = nTest;
+                const preview = document.getElementById('split-preview');
+                preview.textContent = `${nTrain} / ${nVal} / ${nTest} tiles`;
+                preview.classList.remove('hidden');
+            }
         };
 
-        trainInput.addEventListener('input', syncSplit);
-        valInput.addEventListener('input',   syncSplit);
-        syncSplit(); // initialise display on load
+        updateSplitDisplay();
+
+        let _splitDrag = null;
+        const _splitPct = (clientX) => {
+            const rect = splitBar.getBoundingClientRect();
+            return Math.max(0, Math.min(100, (clientX - rect.left) / rect.width * 100));
+        };
+        const _splitMove = (clientX) => {
+            if (!_splitDrag) return;
+            const pct = _splitPct(clientX);
+            if (_splitDrag === 'h1') {
+                this.splitH1 = Math.max(MIN_SEG, Math.min(this.splitH2 - MIN_SEG, pct));
+            } else {
+                this.splitH2 = Math.max(this.splitH1 + MIN_SEG, Math.min(100 - MIN_SEG, pct));
+            }
+            updateSplitDisplay();
+        };
+
+        document.getElementById('split-handle-1').addEventListener('mousedown',  (e) => { e.preventDefault(); _splitDrag = 'h1'; });
+        document.getElementById('split-handle-2').addEventListener('mousedown',  (e) => { e.preventDefault(); _splitDrag = 'h2'; });
+        document.getElementById('split-handle-1').addEventListener('touchstart', (e) => { e.preventDefault(); _splitDrag = 'h1'; }, { passive: false });
+        document.getElementById('split-handle-2').addEventListener('touchstart', (e) => { e.preventDefault(); _splitDrag = 'h2'; }, { passive: false });
+
+        window.addEventListener('mousemove', (e) => _splitMove(e.clientX));
+        window.addEventListener('mouseup',   ()  => { _splitDrag = null; });
+        window.addEventListener('touchmove', (e) => { if (_splitDrag) { e.preventDefault(); _splitMove(e.touches[0].clientX); } }, { passive: false });
+        window.addEventListener('touchend',  ()  => { _splitDrag = null; });
 
         document.getElementById('btn-generate-split').addEventListener('click', async () => {
-            const train = parseInt(document.getElementById('split-train-pct').value) || 0;
-            const val   = parseInt(document.getElementById('split-val-pct').value) || 0;
-            if (train + val >= 100 || train < 1 || val < 1) {
-                this.toast('Train + Val must be between 2% and 99%');
+            const train = Math.round(this.splitH1);
+            const val   = Math.round(this.splitH2 - this.splitH1);
+            if (train < 1 || val < 1 || train + val >= 100) {
+                this.toast('Each segment must be at least 1%');
                 return;
             }
             const btn = document.getElementById('btn-generate-split');
@@ -767,6 +790,11 @@ const App = {
                 const data = await res.json();
                 if (res.ok) {
                     this.splits = data.splits;
+                    this.splitFilter = 'all'; // always reset to "All" after regenerating
+                    // Update count labels with exact server-returned values
+                    document.getElementById('split-count-train').textContent = data.train;
+                    document.getElementById('split-count-val').textContent   = data.val;
+                    document.getElementById('split-count-test').textContent  = data.test;
                     this._updateSplitFilterUI();
                     this.applyFilter();
                     this.toast(`Split: ${data.train} train / ${data.val} val / ${data.test} test`, 'success');
