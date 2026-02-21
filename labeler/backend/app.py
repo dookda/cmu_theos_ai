@@ -97,6 +97,11 @@ class UpdateClassesRequest(BaseModel):
     classes: list[ClassDef]
 
 
+class SplitRequest(BaseModel):
+    train_ratio: float   # 0.0–1.0
+    val_ratio: float     # 0.0–1.0  (test = 1 - train - val)
+
+
 class KMeansRequest(BaseModel):
     n_clusters: int
 
@@ -154,6 +159,47 @@ def get_splits():
         return {"splits": splits}
     except Exception:
         return {"splits": None}
+
+
+@app.post("/api/splits")
+def create_splits(req: SplitRequest):
+    """Generate train/val/test splits from all tiles in the current folder and save splits.json."""
+    import json, random
+    if req.train_ratio <= 0 or req.val_ratio <= 0 or req.train_ratio + req.val_ratio >= 1.0:
+        raise HTTPException(400, "train_ratio and val_ratio must be positive and sum to less than 1.0")
+
+    td = _tiles_dir()
+    tiles = sorted([
+        f for f in os.listdir(td)
+        if f.endswith(".png") and "nir" not in f and os.path.isfile(os.path.join(td, f))
+    ])
+    if not tiles:
+        raise HTTPException(400, "No tiles found in current folder")
+
+    random.shuffle(tiles)
+    n = len(tiles)
+    n_train = max(1, round(n * req.train_ratio))
+    n_val   = max(1, round(n * req.val_ratio))
+    n_test  = max(0, n - n_train - n_val)
+
+    splits = {
+        "train": tiles[:n_train],
+        "val":   tiles[n_train:n_train + n_val],
+        "test":  tiles[n_train + n_val:],
+    }
+
+    splits_path = os.path.join(td, "splits.json")
+    with open(splits_path, "w", encoding="utf-8") as f:
+        json.dump(splits, f, indent=2)
+
+    return {
+        "status": "ok",
+        "total": n,
+        "train": len(splits["train"]),
+        "val":   len(splits["val"]),
+        "test":  len(splits["test"]),
+        "splits": splits,
+    }
 
 
 
@@ -227,6 +273,24 @@ def post_label(filename: str, req: SaveLabelRequest):
         save_yolo_segment(filename, lines, folder)
 
     return {"status": "saved", "formats": sorted(_export_formats)}
+
+
+@app.post("/api/reexport-yolo")
+def reexport_yolo():
+    """Re-export YOLO detect/segment labels for all existing semantic masks in the current folder."""
+    folder = _get_folder()
+    labeled = list_labeled_files(folder)
+    count = 0
+    for filename in sorted(labeled):
+        mask = load_label(filename, folder)
+        if mask is None:
+            continue
+        if "detect" in _export_formats:
+            save_yolo_detect(filename, mask_to_yolo_detect(mask), folder)
+        if "segment" in _export_formats:
+            save_yolo_segment(filename, mask_to_yolo_segment(mask), folder)
+        count += 1
+    return {"status": "ok", "reexported": count, "formats": sorted(_export_formats)}
 
 
 @app.get("/api/progress")

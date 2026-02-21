@@ -702,6 +702,27 @@ const App = {
             cb.addEventListener('change', () => this.updateExportFormats());
         });
 
+        // Re-export all YOLO
+        document.getElementById('btn-reexport-yolo').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-reexport-yolo');
+            btn.classList.add('loading');
+            btn.disabled = true;
+            this.setStatus('Re-exporting YOLO...');
+            try {
+                const res = await fetch('/api/reexport-yolo', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    this.toast(`Re-exported ${data.reexported} tiles (${data.formats.join(', ')})`, 'success');
+                } else {
+                    this.toast(`Re-export failed: ${data.detail || res.statusText}`);
+                }
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                this.setStatus('Ready');
+            }
+        });
+
         // Brush size
         document.getElementById('brush-size').addEventListener('input', (e) => {
             Canvas.brushSize = parseInt(e.target.value);
