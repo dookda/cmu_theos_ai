@@ -891,8 +891,13 @@ const App = {
         document.getElementById('btn-export-zip').addEventListener('click', async () => {
             const format = document.getElementById('export-zip-format').value;
             const btn = document.getElementById('btn-export-zip');
-            btn.classList.add('loading');
+            const wrap = document.getElementById('export-progress-wrap');
+            const bar  = document.getElementById('export-progress-bar');
+            const txt  = document.getElementById('export-progress-text');
             btn.disabled = true;
+            bar.value = 0;
+            wrap.classList.remove('hidden');
+            txt.textContent = '0%';
             this.setStatus('Building ZIP...');
             try {
                 const res = await fetch(`/api/export-zip?format=${format}`);
@@ -901,7 +906,23 @@ const App = {
                     this.toast(data.detail || 'Export failed');
                     return;
                 }
-                const blob = await res.blob();
+                const total = parseInt(res.headers.get('content-length') || '0');
+                const reader = res.body.getReader();
+                const chunks = [];
+                let received = 0;
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    received += value.length;
+                    if (total > 0) {
+                        const pct = Math.round(received / total * 100);
+                        bar.value = pct;
+                        txt.textContent = `${pct}%`;
+                        this.setStatus(`Downloading… ${pct}%`);
+                    }
+                }
+                const blob = new Blob(chunks, { type: 'application/zip' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -912,8 +933,8 @@ const App = {
             } catch (e) {
                 this.toast('Export failed: ' + e.message);
             } finally {
-                btn.classList.remove('loading');
                 btn.disabled = false;
+                wrap.classList.add('hidden');
                 this.setStatus('Ready');
             }
         });

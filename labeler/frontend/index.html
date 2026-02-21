@@ -263,6 +263,10 @@
                     <option value="coco">COCO Instance Segmentation</option>
                 </select>
                 <button id="btn-export-zip" class="btn btn-primary btn-xs w-full">Export as ZIP</button>
+                <div id="export-progress-wrap" class="hidden mt-2">
+                    <progress id="export-progress-bar" class="progress progress-primary w-full" value="0" max="100"></progress>
+                    <div class="text-[11px] text-base-content/50 text-center mt-0.5" id="export-progress-text">0%</div>
+                </div>
                 <div class="text-[11px] text-base-content/30 mt-1 mb-2">Requires splits to be generated first</div>
                 <button id="btn-reexport-yolo" class="btn btn-ghost btn-xs w-full">Re-create Label Files</button>
             </div>

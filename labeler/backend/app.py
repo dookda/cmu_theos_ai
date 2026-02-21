@@ -566,11 +566,15 @@ def export_zip(format: str = "yolo_detect"):
                 ]
                 zf.writestr("data.yaml", "\n".join(yaml_lines) + "\n")
 
+    size = buf.seek(0, 2)
     buf.seek(0)
     return StreamingResponse(
         buf,
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="dataset_{format}.zip"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="dataset_{format}.zip"',
+            "Content-Length": str(size),
+        },
     )
 
 
