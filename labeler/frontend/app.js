@@ -27,7 +27,6 @@ const App = {
         Canvas.init();
         await ClassPanel.init();
         await this.loadFolders();
-        await this.loadExportFormats();
         await this.loadTileList();
         this.setupEventListeners();
 
@@ -86,27 +85,6 @@ const App = {
                 this.setStatus('No tiles in this folder');
             }
         }
-    },
-
-    async loadExportFormats() {
-        const res = await fetch('/api/export-formats');
-        const data = await res.json();
-        const formats = new Set(data.formats);
-        const detectCb = document.getElementById('fmt-detect');
-        const segmentCb = document.getElementById('fmt-segment');
-        if (detectCb) detectCb.checked = formats.has('detect');
-        if (segmentCb) segmentCb.checked = formats.has('segment');
-    },
-
-    async updateExportFormats() {
-        const formats = ['semantic'];
-        if (document.getElementById('fmt-detect')?.checked) formats.push('detect');
-        if (document.getElementById('fmt-segment')?.checked) formats.push('segment');
-        await fetch('/api/export-formats', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ formats }),
-        });
     },
 
     async loadTileList() {
@@ -734,11 +712,6 @@ const App = {
         document.getElementById('folder-select').addEventListener('change', (e) =>
             this.switchFolder(e.target.value));
 
-        // Export format checkboxes
-        document.querySelectorAll('[data-format]').forEach(cb => {
-            cb.addEventListener('change', () => this.updateExportFormats());
-        });
-
         // Dataset Split — two-handle drag bar
         const splitBar = document.getElementById('split-bar');
         const MIN_SEG  = 2; // minimum % per segment
@@ -848,7 +821,7 @@ const App = {
             const btn = document.getElementById('btn-reexport-yolo');
             btn.classList.add('loading');
             btn.disabled = true;
-            this.setStatus('Re-exporting YOLO...');
+            this.setStatus('Re-creating label files...');
             try {
                 const res = await fetch('/api/reexport-yolo', { method: 'POST' });
                 const data = await res.json();
