@@ -197,20 +197,27 @@
             <!-- Dataset Split -->
             <div>
                 <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-2">Dataset Split</div>
-                <div class="flex flex-col gap-1.5">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-base-content/60 w-8">Train</span>
-                        <input type="number" id="split-train-pct" value="70" min="1" max="98" class="input input-bordered input-xs w-14 text-center">
-                        <span class="text-xs text-base-content/40">%</span>
+                <div class="flex flex-col gap-2">
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span class="text-xs text-base-content/60">Train</span>
+                            <span class="text-xs text-base-content/60 font-mono"><span id="split-train-val">70</span>%</span>
+                        </div>
+                        <input type="range" id="split-train-pct" value="70" min="1" max="98" class="range range-xs range-success w-full">
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-base-content/60 w-8">Val</span>
-                        <input type="number" id="split-val-pct" value="15" min="1" max="98" class="input input-bordered input-xs w-14 text-center">
-                        <span class="text-xs text-base-content/40">%</span>
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span class="text-xs text-base-content/60">Val</span>
+                            <span class="text-xs text-base-content/60 font-mono"><span id="split-val-val">15</span>%</span>
+                        </div>
+                        <input type="range" id="split-val-pct" value="15" min="1" max="98" class="range range-xs range-warning w-full">
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-base-content/60 w-8">Test</span>
-                        <span id="split-test-pct" class="text-xs text-base-content/40">15%</span>
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span class="text-xs text-base-content/60">Test</span>
+                            <span class="text-xs text-base-content/60 font-mono"><span id="split-test-val">15</span>%</span>
+                        </div>
+                        <input type="range" id="split-test-pct" value="15" min="1" max="98" class="range range-xs range-error w-full" disabled>
                     </div>
                 </div>
                 <div id="split-preview" class="text-[11px] text-base-content/30 mt-1.5 hidden"></div>

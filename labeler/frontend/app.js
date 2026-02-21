@@ -702,15 +702,20 @@ const App = {
             cb.addEventListener('change', () => this.updateExportFormats());
         });
 
-        // Dataset Split — live test% preview
+        // Dataset Split — auto-adjust so train + val + test = 100
+        const trainInput = document.getElementById('split-train-pct');
+        const valInput   = document.getElementById('split-val-pct');
+        const testInput  = document.getElementById('split-test-pct');
+
+        const clamp = (v) => Math.max(1, Math.min(98, v));
+
         const updateSplitPreview = () => {
-            const train = parseInt(document.getElementById('split-train-pct').value) || 0;
-            const val   = parseInt(document.getElementById('split-val-pct').value) || 0;
-            const test  = Math.max(0, 100 - train - val);
-            document.getElementById('split-test-pct').textContent = `${test}%`;
+            const train = parseInt(trainInput.value) || 1;
+            const val   = parseInt(valInput.value)   || 1;
+            const test  = parseInt(testInput.value)  || 1;
             const preview = document.getElementById('split-preview');
             const total = this.tiles.length;
-            if (total > 0 && test >= 0 && train + val < 100) {
+            if (total > 0) {
                 const nTrain = Math.max(1, Math.round(total * train / 100));
                 const nVal   = Math.max(1, Math.round(total * val / 100));
                 const nTest  = Math.max(0, total - nTrain - nVal);
@@ -720,8 +725,27 @@ const App = {
                 preview.classList.add('hidden');
             }
         };
-        document.getElementById('split-train-pct').addEventListener('input', updateSplitPreview);
-        document.getElementById('split-val-pct').addEventListener('input', updateSplitPreview);
+
+        // Sliders: Train and Val are user-controlled; Test = 100 - train - val (read-only)
+        const syncSplit = () => {
+            let train = parseInt(trainInput.value) || 1;
+            let val   = parseInt(valInput.value)   || 1;
+            // Cap val so test >= 1
+            if (train + val > 99) {
+                val = Math.max(1, 99 - train);
+                valInput.value = val;
+            }
+            const test = 100 - train - val;
+            testInput.value = test;
+            document.getElementById('split-train-val').textContent = train;
+            document.getElementById('split-val-val').textContent   = val;
+            document.getElementById('split-test-val').textContent  = test;
+            updateSplitPreview();
+        };
+
+        trainInput.addEventListener('input', syncSplit);
+        valInput.addEventListener('input',   syncSplit);
+        syncSplit(); // initialise display on load
 
         document.getElementById('btn-generate-split').addEventListener('click', async () => {
             const train = parseInt(document.getElementById('split-train-pct').value) || 0;
