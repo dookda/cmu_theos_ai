@@ -702,6 +702,60 @@ const App = {
             cb.addEventListener('change', () => this.updateExportFormats());
         });
 
+        // Dataset Split — live test% preview
+        const updateSplitPreview = () => {
+            const train = parseInt(document.getElementById('split-train-pct').value) || 0;
+            const val   = parseInt(document.getElementById('split-val-pct').value) || 0;
+            const test  = Math.max(0, 100 - train - val);
+            document.getElementById('split-test-pct').textContent = `${test}%`;
+            const preview = document.getElementById('split-preview');
+            const total = this.tiles.length;
+            if (total > 0 && test >= 0 && train + val < 100) {
+                const nTrain = Math.max(1, Math.round(total * train / 100));
+                const nVal   = Math.max(1, Math.round(total * val / 100));
+                const nTest  = Math.max(0, total - nTrain - nVal);
+                preview.textContent = `${total} tiles → ${nTrain} / ${nVal} / ${nTest}`;
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+            }
+        };
+        document.getElementById('split-train-pct').addEventListener('input', updateSplitPreview);
+        document.getElementById('split-val-pct').addEventListener('input', updateSplitPreview);
+
+        document.getElementById('btn-generate-split').addEventListener('click', async () => {
+            const train = parseInt(document.getElementById('split-train-pct').value) || 0;
+            const val   = parseInt(document.getElementById('split-val-pct').value) || 0;
+            if (train + val >= 100 || train < 1 || val < 1) {
+                this.toast('Train + Val must be between 2% and 99%');
+                return;
+            }
+            const btn = document.getElementById('btn-generate-split');
+            btn.classList.add('loading');
+            btn.disabled = true;
+            this.setStatus('Generating splits...');
+            try {
+                const res = await fetch('/api/splits', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ train_ratio: train / 100, val_ratio: val / 100 }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    this.splits = data.splits;
+                    this._updateSplitFilterUI();
+                    this.applyFilter();
+                    this.toast(`Split: ${data.train} train / ${data.val} val / ${data.test} test`, 'success');
+                } else {
+                    this.toast(`Split failed: ${data.detail || res.statusText}`);
+                }
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                this.setStatus('Ready');
+            }
+        });
+
         // Re-export all YOLO
         document.getElementById('btn-reexport-yolo').addEventListener('click', async () => {
             const btn = document.getElementById('btn-reexport-yolo');
