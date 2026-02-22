@@ -57,10 +57,11 @@ input[type="range"] {
 #sidebar-left,
 #sidebar-thumb,
 #sidebar-right {
-    transition: width 0.2s ease, min-width 0.2s ease, opacity 0.15s ease;
+    transition: width 0.2s ease, min-width 0.2s ease;
     min-width: 0;
 }
 
+/* All panels/strips collapse to nothing */
 .sidebar-collapsed {
     width: 0 !important;
     min-width: 0 !important;
@@ -69,6 +70,28 @@ input[type="range"] {
     border: none !important;
     padding: 0 !important;
 }
+
+/* Floating re-open tabs (shown when panel is collapsed) */
+.panel-tab {
+    position: absolute;
+    top: 48px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 48px;
+    background: var(--color-base-100, #fff);
+    border: 1px solid var(--color-base-300, #e5e7eb);
+    cursor: pointer;
+    opacity: 0.85;
+    transition: opacity 0.15s, transform 0.15s;
+}
+
+.panel-tab:hover { opacity: 1; transform: scaleX(1.15); }
+
+#tab-left  { left: 0;  border-left: none;  border-radius: 0 6px 6px 0; }
+#tab-right { right: 0; border-right: none; border-radius: 6px 0 0 6px; }
 
 /* Make delete (×) always visible on touch devices (no hover) */
 @media (hover: none) {

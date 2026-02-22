@@ -312,9 +312,27 @@ async def upload_tiles(files: list[UploadFile] = File(...)):
 
 # --- Augmentation endpoint ---
 
+def _clear_aug_tiles(folder: str, td: str) -> int:
+    """Delete all _aug_ tiles and their associated files. Returns count of deleted tiles."""
+    aug_tiles = [
+        f for f in os.listdir(td)
+        if f.endswith(".png") and "_aug_" in f and os.path.isfile(os.path.join(td, f))
+    ] if os.path.isdir(td) else []
+    deleted = 0
+    for filename in aug_tiles:
+        try:
+            delete_tile_files(filename, folder, td, EMBEDDINGS_DIR)
+            deleted += 1
+        except Exception:
+            continue
+    return deleted
+
+
 @app.post("/api/augment")
 def augment_dataset(req: AugmentRequest):
-    """Apply augmentation transforms to labeled (or all) tiles in the current folder."""
+    """Clear existing aug tiles then stream progress as SSE while augmenting."""
+    import json as _json
+
     invalid = set(req.transforms) - VALID_TRANSFORMS
     if invalid:
         raise HTTPException(400, f"Unknown transforms: {sorted(invalid)}. Valid: {sorted(VALID_TRANSFORMS)}")
@@ -323,29 +341,38 @@ def augment_dataset(req: AugmentRequest):
 
     folder = _get_folder()
     td = _tiles_dir()
-    labeled = list_labeled_files(folder)
 
-    if req.labeled_only:
-        candidates = sorted(labeled)
-    else:
-        candidates = sorted([
-            f for f in os.listdir(td)
-            if f.endswith(".png") and "nir" not in f and "_aug_" not in f
-            and os.path.isfile(os.path.join(td, f))
-        ])
+    def generate():
+        # Step 1 — clear old aug tiles
+        _clear_aug_tiles(folder, td)
 
-    all_created = []
-    for filename in candidates:
-        mask = load_label(filename, folder)
-        if mask is None:
-            continue
-        try:
-            result = augment_tile(filename, mask, req.transforms, td, folder, req.n_random)
-            all_created.extend(result["created"])
-        except Exception:
-            continue
+        labeled = list_labeled_files(folder)
+        if req.labeled_only:
+            candidates = sorted(labeled)
+        else:
+            candidates = sorted([
+                f for f in os.listdir(td)
+                if f.endswith(".png") and "nir" not in f and "_aug_" not in f
+                and os.path.isfile(os.path.join(td, f))
+            ])
 
-    return {"augmented": len(candidates), "created": len(all_created), "files": all_created}
+        total = len(candidates)
+        yield f"data: {_json.dumps({'type': 'start', 'total': total})}\n\n"
+
+        all_created = []
+        for i, filename in enumerate(candidates):
+            mask = load_label(filename, folder)
+            if mask is not None:
+                try:
+                    result = augment_tile(filename, mask, req.transforms, td, folder, req.n_random)
+                    all_created.extend(result["created"])
+                except Exception:
+                    pass
+            yield f"data: {_json.dumps({'type': 'progress', 'done': i + 1, 'total': total})}\n\n"
+
+        yield f"data: {_json.dumps({'type': 'done', 'augmented': total, 'created': len(all_created)})}\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
 
 
 @app.delete("/api/augment")
@@ -353,23 +380,8 @@ def clear_augmentation():
     """Delete all augmented tiles (_aug_*) and their associated files from the current folder."""
     folder = _get_folder()
     td = _tiles_dir()
-
-    aug_tiles = [
-        f for f in os.listdir(td)
-        if f.endswith(".png") and "_aug_" in f and os.path.isfile(os.path.join(td, f))
-    ] if os.path.isdir(td) else []
-
-    deleted_tiles = 0
-    deleted_files = 0
-    for filename in aug_tiles:
-        try:
-            result = delete_tile_files(filename, folder, td, EMBEDDINGS_DIR)
-            deleted_tiles += 1
-            deleted_files += len(result["deleted"])
-        except Exception:
-            continue
-
-    return {"status": "ok", "deleted_tiles": deleted_tiles, "deleted_files": deleted_files}
+    deleted_tiles = _clear_aug_tiles(folder, td)
+    return {"status": "ok", "deleted_tiles": deleted_tiles, "deleted_files": deleted_tiles}
 
 
 # --- Stats endpoint ---

@@ -571,12 +571,20 @@ const App = {
     },
 
     toggleLeftPanel() {
-        document.getElementById('sidebar-left').classList.toggle('sidebar-collapsed');
+        const sidebar = document.getElementById('sidebar-left');
+        sidebar.classList.toggle('sidebar-collapsed');
         document.getElementById('sidebar-thumb').classList.toggle('sidebar-collapsed');
+        const collapsed = sidebar.classList.contains('sidebar-collapsed');
+        document.getElementById('icon-toggle-left').style.transform = collapsed ? 'rotate(180deg)' : '';
+        document.getElementById('tab-left').classList.toggle('hidden', !collapsed);
     },
 
     toggleRightPanel() {
-        document.getElementById('sidebar-right').classList.toggle('sidebar-collapsed');
+        const sidebar = document.getElementById('sidebar-right');
+        sidebar.classList.toggle('sidebar-collapsed');
+        const collapsed = sidebar.classList.contains('sidebar-collapsed');
+        document.getElementById('icon-toggle-right').style.transform = collapsed ? 'rotate(180deg)' : '';
+        document.getElementById('tab-right').classList.toggle('hidden', !collapsed);
     },
 
     // --- Event listeners ---
@@ -650,9 +658,29 @@ const App = {
             doUpload(e.dataTransfer.files);
         });
 
-        // Sidebar toggle buttons
+        // Sidebar toggle buttons (header chevrons + floating re-open tabs)
         document.getElementById('btn-toggle-left').addEventListener('click', () => this.toggleLeftPanel());
         document.getElementById('btn-toggle-right').addEventListener('click', () => this.toggleRightPanel());
+        document.getElementById('tab-left').addEventListener('click', () => this.toggleLeftPanel());
+        document.getElementById('tab-right').addEventListener('click', () => this.toggleRightPanel());
+
+        // Dark mode toggle
+        document.getElementById('btn-theme').addEventListener('click', () => {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            html.setAttribute('data-theme', isDark ? 'cupcake' : 'dark');
+            document.getElementById('icon-theme-dark').classList.toggle('hidden', !isDark);
+            document.getElementById('icon-theme-light').classList.toggle('hidden', isDark);
+            localStorage.setItem('theme', isDark ? 'cupcake' : 'dark');
+        });
+        // Restore saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            const isDark = savedTheme === 'dark';
+            document.getElementById('icon-theme-dark').classList.toggle('hidden', isDark);
+            document.getElementById('icon-theme-light').classList.toggle('hidden', !isDark);
+        }
 
         // Shortcuts modal
         document.getElementById('btn-shortcuts').addEventListener('click', () =>
@@ -841,6 +869,8 @@ const App = {
                 if (res.ok) {
                     this.toast(`Removed ${data.deleted_tiles} augmented tile(s)`, 'success');
                     document.getElementById('aug-done-badge').classList.add('hidden');
+                    ['aug-flip_h','aug-flip_v','aug-rotate_90','aug-brightness','aug-blur','aug-crop_zoom']
+                        .forEach(id => { document.getElementById(id).checked = false; });
                     await this.loadTileList();
                     this.loadStats();
                 } else {
@@ -875,9 +905,18 @@ const App = {
             }
             if (transforms.length === 0) { this.toast('Select at least one augmentation'); return; }
             const btn = document.getElementById('btn-augment');
-            btn.classList.add('loading');
+            const progressEl  = document.getElementById('aug-progress');
+            const progressBar = document.getElementById('aug-progress-bar');
+            const progressPct = document.getElementById('aug-progress-pct');
+            const progressLbl = document.getElementById('aug-progress-label');
+
             btn.disabled = true;
+            progressEl.classList.remove('hidden');
+            progressBar.value = 0;
+            progressPct.textContent = '0%';
+            progressLbl.textContent = 'Clearing old augmentations...';
             this.setStatus('Augmenting...');
+
             try {
                 const res = await fetch('/api/augment', {
                     method: 'POST',
@@ -888,21 +927,53 @@ const App = {
                         labeled_only: document.getElementById('aug-labeled-only').checked,
                     }),
                 });
-                const data = await res.json();
-                if (res.ok) {
-                    this.toast(`Created ${data.created} augmented tiles from ${data.augmented} source tiles`, 'success');
+
+                const reader  = res.body.getReader();
+                const decoder = new TextDecoder();
+                let lastData  = null;
+                let buffer    = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // keep incomplete line
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const evt = JSON.parse(line.slice(6));
+                        lastData = evt;
+                        if (evt.type === 'start') {
+                            progressLbl.textContent = `Augmenting 0 / ${evt.total} tiles`;
+                        } else if (evt.type === 'progress') {
+                            const pct = Math.round(evt.done / evt.total * 100);
+                            progressBar.value = pct;
+                            progressPct.textContent = `${pct}%`;
+                            progressLbl.textContent = `Augmenting ${evt.done} / ${evt.total} tiles`;
+                        } else if (evt.type === 'done') {
+                            progressBar.value = 100;
+                            progressPct.textContent = '100%';
+                            progressLbl.textContent = `Done — ${evt.created} tiles created`;
+                        }
+                    }
+                }
+
+                if (lastData?.type === 'done') {
                     const augBadge = document.getElementById('aug-done-badge');
-                    augBadge.textContent = `+${data.created}`;
+                    augBadge.textContent = `+${lastData.created}`;
                     augBadge.classList.remove('hidden');
                     await this.loadTileList();
                     this.loadStats();
+                    this.toast(`Created ${lastData.created} augmented tiles from ${lastData.augmented} source tiles`, 'success');
                 } else {
-                    this.toast(data.detail || 'Augmentation failed');
+                    this.toast('Augmentation failed');
                 }
+            } catch (e) {
+                this.toast('Augmentation error: ' + e.message);
             } finally {
-                btn.classList.remove('loading');
                 btn.disabled = false;
                 this.setStatus('Ready');
+                setTimeout(() => progressEl.classList.add('hidden'), 3000);
             }
         });
 
