@@ -36,7 +36,7 @@
             <div>
                 <div class="tabs tabs-bordered mb-2" id="tool-tabs">
                     <button class="tab tab-active whitespace-nowrap" data-tab="sam">SAM</button>
-                    <button class="tab whitespace-nowrap" data-tab="brush" data-i18n="brush_tab">Brush</button>
+                    <button class="tab whitespace-nowrap" data-tab="brush">Brush</button>
                     <button class="tab whitespace-nowrap" data-tab="kmeans">K-Means</button>
                 </div>
 
@@ -134,6 +134,18 @@
                 <progress id="progress-fill" class="progress progress-primary w-full" value="0" max="100"></progress>
             </div>
             <span id="progress-text" class="text-xs font-medium text-base-content/60">0 / 0</span>
+            <!-- Filter buttons -->
+            <div class="join" id="filter-group">
+                <button class="join-item btn btn-xs btn-primary" id="filter-btn-all">
+                    <span data-i18n="filter_all">All</span>&thinsp;<span id="filter-count-all" class="font-mono opacity-70">0</span>
+                </button>
+                <button class="join-item btn btn-xs btn-ghost" id="filter-btn-labeled">
+                    <span data-i18n="filter_labeled">Labeled</span>&thinsp;<span id="filter-count-labeled" class="font-mono opacity-70">0</span>
+                </button>
+                <button class="join-item btn btn-xs btn-ghost" id="filter-btn-unlabeled">
+                    <span data-i18n="filter_unlabeled">Unlabeled</span>&thinsp;<span id="filter-count-unlabeled" class="font-mono opacity-70">0</span>
+                </button>
+            </div>
             <div id="status-msg" class="text-xs font-medium text-primary min-w-[60px]"></div>
             <button id="btn-lang" class="btn btn-ghost btn-xs font-mono" data-i18n-title="switch_lang" title="Switch language">TH</button>
             <button id="btn-theme" class="btn btn-ghost btn-xs btn-square" data-i18n-title="toggle_dark" title="Toggle dark mode">
@@ -194,10 +206,6 @@
             <button id="btn-prev" data-i18n-title="prev_tile" title="Previous tile" class="btn btn-sm btn-ghost">&larr;</button>
             <select id="tile-select" class="select select-bordered select-sm max-w-[180px]"></select>
             <button id="btn-next" data-i18n-title="next_tile" title="Next tile" class="btn btn-sm btn-ghost">&rarr;</button>
-            <label class="label cursor-pointer gap-2 ml-1">
-                <input type="checkbox" id="filter-unlabeled" class="checkbox checkbox-primary">
-                <span class="label-text text-xs" data-i18n="unlabeled_only">Unlabeled only</span>
-            </label>
 
             <!-- Delete + shortcuts — isolated far right with spacer -->
             <div class="flex-1"></div>
@@ -316,6 +324,10 @@
                 </div>
                 <div id="split-preview" class="text-[11px] text-base-content/30 mt-1.5 hidden"></div>
                 <button id="btn-generate-split" class="btn btn-sm btn-accent w-full mt-2" data-i18n="generate_split">Generate Split</button>
+                <div id="split-progress-wrap" class="hidden mt-2">
+                    <progress id="split-progress-bar" class="progress progress-accent w-full h-2" value="0" max="100"></progress>
+                    <div class="text-[11px] text-base-content/50 text-center mt-0.5" id="split-progress-text" data-i18n="generating_splits">Generating splits...</div>
+                </div>
             </div>
 
             <div class="divider my-0"></div>

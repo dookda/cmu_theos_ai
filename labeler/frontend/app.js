@@ -32,7 +32,7 @@ const TRANSLATIONS = {
     next_tile:              ['Next tile', 'ไทล์ถัดไป'],
     unlabeled_only:         ['Unlabeled only', 'ที่ยังไม่ติดป้าย'],
     keyboard_shortcuts:     ['Keyboard shortcuts', 'ปุ่มลัด'],
-    delete_tile_btn:        ['Delete', 'ลบ'],
+    delete_tile_btn:        ['Delete image', 'ลบภาพ'],
     delete_tile_title:      ['Delete tile and label', 'ลบไทล์และป้ายกำกับ'],
     workflow_panel:         ['Workflow', 'ขั้นตอน'],
     collapse_panel:         ['Collapse panel', 'ยุบแผง'],
@@ -130,6 +130,10 @@ const TRANSLATIONS = {
     clearing_aug_status:    ['Clearing augmented tiles...', 'กำลังลบไทล์ที่เพิ่ม...'],
     cluster_label:          ['Cluster {index}', 'คลัสเตอร์ {index}'],
     sam_score:              ['SAM score: {score}', 'คะแนน SAM: {score}'],
+    server_unreachable:     ['Cannot connect to server — is the backend running?', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ — ตรวจสอบว่าเซิร์ฟเวอร์กำลังทำงาน'],
+    filter_all:             ['All', 'ทั้งหมด'],
+    filter_labeled:         ['Labeled', 'ติดป้ายแล้ว'],
+    filter_unlabeled:       ['Unlabeled', 'ยังไม่ติดป้าย'],
 };
 
 /**
@@ -145,6 +149,7 @@ const App = {
     labeledSet: new Set(),
     splits: null,       // {train: [...], val: [...], test: [...]} or null
     splitFilter: 'all', // 'all' | 'train' | 'val' | 'test'
+    filterMode: 'all',  // 'all' | 'labeled' | 'unlabeled'
     splitH1: 70,        // train/val boundary = train%
     splitH2: 85,        // val/test boundary  = train% + val%
     lang: 'en',         // 'en' | 'th'
@@ -166,6 +171,11 @@ const App = {
         for (const [k, v] of Object.entries(params))
             str = str.replaceAll(`{${k}}`, v);
         return str;
+    },
+
+    // Returns a friendly string for a caught fetch error
+    _fetchErr(e) {
+        return e instanceof TypeError ? this.t('server_unreachable') : e.message;
     },
 
     applyTranslations() {
@@ -263,18 +273,34 @@ const App = {
 
 
     applyFilter() {
-        const unlabeledOnly = document.getElementById('filter-unlabeled').checked;
         const splitSet = (this.splits && this.splitFilter !== 'all')
             ? new Set(this.splits[this.splitFilter] || [])
             : null;
 
         this.filteredTiles = this.tiles.filter(t => {
-            if (unlabeledOnly && this.labeledSet.has(t)) return false;
+            if (this.filterMode === 'labeled'   && !this.labeledSet.has(t)) return false;
+            if (this.filterMode === 'unlabeled' &&  this.labeledSet.has(t)) return false;
             if (splitSet && !splitSet.has(t)) return false;
             return true;
         });
         this.populateSelect();
         this.renderThumbnails();
+    },
+
+    updateFilterCounts() {
+        const total     = this.tiles.length;
+        const labeled   = this.tiles.filter(t => this.labeledSet.has(t)).length;
+        const unlabeled = total - labeled;
+
+        document.getElementById('filter-count-all').textContent       = total;
+        document.getElementById('filter-count-labeled').textContent   = labeled;
+        document.getElementById('filter-count-unlabeled').textContent = unlabeled;
+
+        ['all', 'labeled', 'unlabeled'].forEach(mode => {
+            const btn = document.getElementById(`filter-btn-${mode}`);
+            btn.classList.toggle('btn-primary', this.filterMode === mode);
+            btn.classList.toggle('btn-ghost',   this.filterMode !== mode);
+        });
     },
 
     renderThumbnails() {
@@ -652,6 +678,7 @@ const App = {
         const bar = document.getElementById('progress-fill');
         bar.value = pct;
         bar.max = 100;
+        this.updateFilterCounts();
     },
 
     setStatus(msg) {
@@ -806,7 +833,7 @@ const App = {
                     this.toast(data.detail || this.t('upload_failed'));
                 }
             } catch (e) {
-                this.toast(this.t('upload_failed') + ': ' + e.message);
+                this.toast(this._fetchErr(e));
             } finally {
                 this.setStatus(this.t('ready'));
             }
@@ -896,8 +923,14 @@ const App = {
             this.navigateTo(this.currentIndex + 1));
         document.getElementById('tile-select').addEventListener('change', (e) =>
             this.navigateTo(parseInt(e.target.value)));
-        document.getElementById('filter-unlabeled').addEventListener('change', () =>
-            this.applyFilter());
+        ['all', 'labeled', 'unlabeled'].forEach(mode => {
+            document.getElementById(`filter-btn-${mode}`).addEventListener('click', () => {
+                this.filterMode = mode;
+                this.updateFilterCounts();
+                this.applyFilter();
+                if (this.filteredTiles.length > 0) this.navigateTo(0);
+            });
+        });
 
 
 
@@ -993,29 +1026,52 @@ const App = {
                 this.toast(this.t('segment_min'));
                 return;
             }
-            const btn = document.getElementById('btn-generate-split');
-            btn.classList.add('loading');
+            const btn      = document.getElementById('btn-generate-split');
+            const wrap     = document.getElementById('split-progress-wrap');
+            const bar      = document.getElementById('split-progress-bar');
+            const txt      = document.getElementById('split-progress-text');
             btn.disabled = true;
+            bar.value = 0;
+            wrap.classList.remove('hidden');
+            txt.textContent = this.t('generating_splits');
             this.setStatus(this.t('generating_splits'));
+
+            // Animate bar to 80% while waiting for server response
+            let animPct = 0;
+            const anim = setInterval(() => {
+                animPct = Math.min(animPct + 4, 80);
+                bar.value = animPct;
+            }, 60);
+
             try {
                 const res = await fetch('/api/splits', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ train_ratio: train / 100, val_ratio: val / 100 }),
                 });
+                clearInterval(anim);
                 const data = await res.json();
                 if (res.ok) {
+                    bar.value = 100;
+                    txt.textContent = this.t('split_success', { train: data.train, val: data.val, test: data.test });
                     this.splits = data.splits;
                     this.splitFilter = 'all';
                     document.getElementById('split-done-badge').classList.remove('hidden');
                     this.applyFilter();
                     await this.loadTileList();
                     this.toast(this.t('split_success', { train: data.train, val: data.val, test: data.test }), 'success');
+                    setTimeout(() => wrap.classList.add('hidden'), 2500);
                 } else {
+                    bar.value = 0;
+                    txt.textContent = this.t('split_failed', { detail: data.detail || res.statusText });
                     this.toast(this.t('split_failed', { detail: data.detail || res.statusText }));
+                    setTimeout(() => wrap.classList.add('hidden'), 3000);
                 }
+            } catch (e) {
+                clearInterval(anim);
+                wrap.classList.add('hidden');
+                this.toast(this._fetchErr(e));
             } finally {
-                btn.classList.remove('loading');
                 btn.disabled = false;
                 this.setStatus(this.t('ready'));
             }
@@ -1140,7 +1196,7 @@ const App = {
                     this.toast(this.t('aug_failed'));
                 }
             } catch (e) {
-                this.toast(this.t('aug_error', { msg: e.message }));
+                this.toast(this._fetchErr(e));
             } finally {
                 btn.disabled = false;
                 this.setStatus(this.t('ready'));
@@ -1204,7 +1260,7 @@ const App = {
                 this.toast(this.t('dataset_downloaded'), 'success');
                 setTimeout(() => { wrap.classList.add('hidden'); this.setStatus(this.t('ready')); }, 2000);
             } catch (e) {
-                this.toast(this.t('export_failed_msg', { msg: e.message }));
+                this.toast(this._fetchErr(e));
                 wrap.classList.add('hidden');
                 this.setStatus(this.t('ready'));
             } finally {
