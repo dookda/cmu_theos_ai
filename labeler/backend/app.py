@@ -591,10 +591,73 @@ def get_config():
 
 # --- Export ZIP endpoint ---
 
-@app.get("/api/export-zip")
-def export_zip(format: str = "yolo_detect"):
-    """Export dataset as a ZIP with train/val/test splits in the selected label format."""
-    import json, io, zipfile
+_export_tmp: dict = {}   # format -> temp file path (single-user tool)
+
+
+def _build_export_zip(format: str, td: str, splits: dict, folder: str,
+                      label_base: str, label_classes: list, classes: list) -> str:
+    """Build the export ZIP to a temp file and return its path."""
+    import tempfile, io as _io, zipfile
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+    tmp.close()
+
+    with zipfile.ZipFile(tmp.name, "w", zipfile.ZIP_DEFLATED) as zf:
+        if format == "coco":
+            import json as _json
+            categories = [{"id": c["index"], "name": c["name"]} for c in label_classes]
+            for split_name in ("train", "val", "test"):
+                coco_images, coco_anns = [], []
+                ann_id = 1
+                for img_id, filename in enumerate(splits.get(split_name, []), start=1):
+                    img_path = os.path.join(td, filename)
+                    if os.path.exists(img_path):
+                        zf.write(img_path, f"{split_name}/images/{filename}")
+                    coco_images.append({"id": img_id, "file_name": filename,
+                                        "width": TILE_SIZE, "height": TILE_SIZE})
+                    mask = load_label(filename, folder)
+                    if mask is not None:
+                        anns = mask_to_coco_annotations(mask, img_id, ann_id)
+                        coco_anns.extend(anns)
+                        ann_id += len(anns)
+                zf.writestr(f"annotations/{split_name}.json", _json.dumps({
+                    "info": {"description": "Exported from Dabeler", "version": "1.0"},
+                    "categories": categories, "images": coco_images, "annotations": coco_anns,
+                }, indent=2))
+        else:
+            for split_name in ("train", "val", "test"):
+                for filename in splits.get(split_name, []):
+                    stem = os.path.splitext(filename)[0]
+                    img_path = os.path.join(td, filename)
+                    if os.path.exists(img_path):
+                        zf.write(img_path, f"{split_name}/images/{filename}")
+                    if format == "semantic":
+                        lbl = os.path.join(label_base, "semantic", filename)
+                        if os.path.exists(lbl):
+                            zf.write(lbl, f"{split_name}/masks/{filename}")
+                    elif format == "yolo_detect":
+                        mask = load_label(filename, folder)
+                        if mask is not None:
+                            lines = mask_to_yolo_detect(mask)
+                            zf.writestr(f"{split_name}/labels/{stem}.txt", "\n".join(lines) + "\n" if lines else "")
+                    elif format == "yolo_segment":
+                        mask = load_label(filename, folder)
+                        if mask is not None:
+                            lines = mask_to_yolo_segment(mask)
+                            zf.writestr(f"{split_name}/labels/{stem}.txt", "\n".join(lines) + "\n" if lines else "")
+            if format in ("yolo_detect", "yolo_segment"):
+                names = [c["name"] for c in label_classes]
+                zf.writestr("data.yaml", "\n".join([
+                    "train: ../train/images", "val:   ../val/images", "test:  ../test/images",
+                    "", f"nc: {len(names)}", f"names: {names}",
+                ]) + "\n")
+    return tmp.name
+
+
+@app.post("/api/export-zip")
+def export_zip_stream(format: str = "yolo_detect"):
+    """Stream export progress via SSE, build ZIP, store for download."""
+    import json as _json
 
     valid_formats = {"semantic", "yolo_detect", "yolo_segment", "coco"}
     if format not in valid_formats:
@@ -606,88 +669,97 @@ def export_zip(format: str = "yolo_detect"):
         raise HTTPException(400, "No splits found. Generate splits first.")
 
     with open(splits_path, "r", encoding="utf-8") as f:
-        splits = json.load(f)
+        splits = _json.load(f)
 
-    folder = _get_folder()
+    folder   = _get_folder()
     label_base = os.path.join(LABELS_DIR, folder) if folder else LABELS_DIR
-
-    classes = load_classes()
-    # COCO / YOLO category list (skip background at index 0)
+    classes  = load_classes()
     label_classes = [c for c in classes if c["index"] != 0]
 
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+    all_files = [f for s in ("train", "val", "test") for f in splits.get(s, [])]
+    total = len(all_files)
 
-        if format == "coco":
-            # Build one COCO JSON per split
-            categories = [{"id": c["index"], "name": c["name"]} for c in label_classes]
-            for split_name in ("train", "val", "test"):
-                coco_images, coco_anns = [], []
-                ann_id = 1
-                for img_id, filename in enumerate(splits.get(split_name, []), start=1):
-                    img_path = os.path.join(td, filename)
-                    if os.path.exists(img_path):
-                        zf.write(img_path, f"{split_name}/images/{filename}")
-                    coco_images.append({
-                        "id": img_id, "file_name": filename,
-                        "width": TILE_SIZE, "height": TILE_SIZE,
-                    })
-                    mask = load_label(filename, folder)
-                    if mask is not None:
-                        anns = mask_to_coco_annotations(mask, img_id, ann_id)
-                        coco_anns.extend(anns)
-                        ann_id += len(anns)
+    def generate():
+        yield f"data: {_json.dumps({'type': 'start', 'total': total})}\n\n"
+        # Build ZIP (progress tracked per tile via generator wrapper)
+        import tempfile, zipfile
 
-                coco_json = json.dumps({
-                    "info": {"description": "Exported from Dabeler", "version": "1.0"},
-                    "categories": categories,
-                    "images": coco_images,
-                    "annotations": coco_anns,
-                }, indent=2)
-                zf.writestr(f"annotations/{split_name}.json", coco_json)
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+        tmp.close()
+        done = 0
 
-        else:
-            for split_name in ("train", "val", "test"):
-                for filename in splits.get(split_name, []):
-                    stem = os.path.splitext(filename)[0]
+        with zipfile.ZipFile(tmp.name, "w", zipfile.ZIP_DEFLATED) as zf:
+            if format == "coco":
+                categories = [{"id": c["index"], "name": c["name"]} for c in label_classes]
+                for split_name in ("train", "val", "test"):
+                    coco_images, coco_anns, ann_id = [], [], 1
+                    for img_id, filename in enumerate(splits.get(split_name, []), start=1):
+                        img_path = os.path.join(td, filename)
+                        if os.path.exists(img_path):
+                            zf.write(img_path, f"{split_name}/images/{filename}")
+                        coco_images.append({"id": img_id, "file_name": filename,
+                                            "width": TILE_SIZE, "height": TILE_SIZE})
+                        mask = load_label(filename, folder)
+                        if mask is not None:
+                            anns = mask_to_coco_annotations(mask, img_id, ann_id)
+                            coco_anns.extend(anns); ann_id += len(anns)
+                        done += 1
+                        yield f"data: {_json.dumps({'type': 'progress', 'done': done, 'total': total})}\n\n"
+                    zf.writestr(f"annotations/{split_name}.json", _json.dumps({
+                        "info": {"description": "Exported from Dabeler", "version": "1.0"},
+                        "categories": categories, "images": coco_images, "annotations": coco_anns,
+                    }, indent=2))
+            else:
+                for split_name in ("train", "val", "test"):
+                    for filename in splits.get(split_name, []):
+                        stem = os.path.splitext(filename)[0]
+                        img_path = os.path.join(td, filename)
+                        if os.path.exists(img_path):
+                            zf.write(img_path, f"{split_name}/images/{filename}")
+                        if format == "semantic":
+                            lbl = os.path.join(label_base, "semantic", filename)
+                            if os.path.exists(lbl):
+                                zf.write(lbl, f"{split_name}/masks/{filename}")
+                        elif format == "yolo_detect":
+                            mask = load_label(filename, folder)
+                            if mask is not None:
+                                lines = mask_to_yolo_detect(mask)
+                                zf.writestr(f"{split_name}/labels/{stem}.txt",
+                                            "\n".join(lines) + "\n" if lines else "")
+                        elif format == "yolo_segment":
+                            mask = load_label(filename, folder)
+                            if mask is not None:
+                                lines = mask_to_yolo_segment(mask)
+                                zf.writestr(f"{split_name}/labels/{stem}.txt",
+                                            "\n".join(lines) + "\n" if lines else "")
+                        done += 1
+                        yield f"data: {_json.dumps({'type': 'progress', 'done': done, 'total': total})}\n\n"
+                if format in ("yolo_detect", "yolo_segment"):
+                    names = [c["name"] for c in label_classes]
+                    zf.writestr("data.yaml", "\n".join([
+                        "train: ../train/images", "val:   ../val/images", "test:  ../test/images",
+                        "", f"nc: {len(names)}", f"names: {names}",
+                    ]) + "\n")
 
-                    img_path = os.path.join(td, filename)
-                    if os.path.exists(img_path):
-                        zf.write(img_path, f"{split_name}/images/{filename}")
+        _export_tmp[format] = tmp.name
+        yield f"data: {_json.dumps({'type': 'done', 'format': format})}\n\n"
 
-                    if format == "semantic":
-                        lbl = os.path.join(label_base, "semantic", filename)
-                        if os.path.exists(lbl):
-                            zf.write(lbl, f"{split_name}/masks/{filename}")
-                    elif format == "yolo_detect":
-                        lbl = os.path.join(label_base, "yolo_detect", f"{stem}.txt")
-                        if os.path.exists(lbl):
-                            zf.write(lbl, f"{split_name}/labels/{stem}.txt")
-                    elif format == "yolo_segment":
-                        lbl = os.path.join(label_base, "yolo_segment", f"{stem}.txt")
-                        if os.path.exists(lbl):
-                            zf.write(lbl, f"{split_name}/labels/{stem}.txt")
+    return StreamingResponse(generate(), media_type="text/event-stream")
 
-            if format in ("yolo_detect", "yolo_segment"):
-                names = [c["name"] for c in label_classes]
-                yaml_lines = [
-                    "train: ../train/images",
-                    "val:   ../val/images",
-                    "test:  ../test/images",
-                    "",
-                    f"nc: {len(names)}",
-                    f"names: {names}",
-                ]
-                zf.writestr("data.yaml", "\n".join(yaml_lines) + "\n")
 
-    size = buf.seek(0, 2)
-    buf.seek(0)
+@app.get("/api/export-zip/download")
+def export_zip_download(format: str = "yolo_detect"):
+    """Serve the previously built export ZIP file."""
+    import tempfile
+    path = _export_tmp.get(format)
+    if not path or not os.path.exists(path):
+        raise HTTPException(404, "Export not ready. Run export first.")
     return StreamingResponse(
-        buf,
+        open(path, "rb"),
         media_type="application/zip",
         headers={
             "Content-Disposition": f'attachment; filename="dataset_{format}.zip"',
-            "Content-Length": str(size),
+            "Content-Length": str(os.path.getsize(path)),
         },
     )
 

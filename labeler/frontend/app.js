@@ -1,3 +1,137 @@
+// ===== Bilingual translations [English, Thai] =====
+const TRANSLATIONS = {
+    classes:                ['Classes', 'คลาส'],
+    add_class:              ['Add class', 'เพิ่มคลาส'],
+    brush_tool:             ['Brush', 'แปรง'],
+    eraser_tool:            ['Eraser', 'ยางลบ'],
+    run_kmeans:             ['Run K-Means', 'รัน K-Means'],
+    reassign_clusters:      ['Re-assign Clusters', 'กำหนดคลัสเตอร์ใหม่'],
+    image_adjust:           ['Image Adjust', 'ปรับภาพ'],
+    reset:                  ['Reset', 'รีเซ็ต'],
+    coverage:               ['Coverage', 'ความครอบคลุม'],
+    refresh_stats:          ['Refresh stats', 'รีเฟรชสถิติ'],
+    upload_hint:            ['Click or drop images to upload tiles', 'คลิกหรือลากรูปภาพเพื่ออัปโหลด'],
+    upload_btn:             ['Upload', 'อัปโหลด'],
+    open_sidebar:           ['Open sidebar', 'เปิดแถบด้านซ้าย'],
+    open_workflow:          ['Open workflow panel', 'เปิดแผงขั้นตอน'],
+    toggle_dark:            ['Toggle dark mode', 'สลับโหมดมืด'],
+    switch_lang:            ['Switch language', 'เปลี่ยนภาษา'],
+    zoom_in:                ['Zoom in', 'ซูมเข้า'],
+    zoom_out:               ['Zoom out', 'ซูมออก'],
+    pan_up:                 ['Pan up', 'เลื่อนขึ้น'],
+    pan_left:               ['Pan left', 'เลื่อนซ้าย'],
+    pan_right:              ['Pan right', 'เลื่อนขวา'],
+    pan_down:               ['Pan down', 'เลื่อนลง'],
+    reset_view_btn:         ['Fit', 'พอดีจอ'],
+    reset_view_title:       ['Reset view', 'รีเซ็ตมุมมอง'],
+    sam_hint:               ['SAM preview — Enter accept, Esc reject', 'ตัวอย่าง SAM — Enter ยืนยัน, Esc ยกเลิก'],
+    undo:                   ['Undo', 'เลิกทำ'],
+    clear:                  ['Clear', 'ล้าง'],
+    save:                   ['Save', 'บันทึก'],
+    prev_tile:              ['Previous tile', 'ไทล์ก่อนหน้า'],
+    next_tile:              ['Next tile', 'ไทล์ถัดไป'],
+    unlabeled_only:         ['Unlabeled only', 'ที่ยังไม่ติดป้าย'],
+    keyboard_shortcuts:     ['Keyboard shortcuts', 'ปุ่มลัด'],
+    delete_tile_btn:        ['Delete', 'ลบ'],
+    delete_tile_title:      ['Delete tile and label', 'ลบไทล์และป้ายกำกับ'],
+    workflow_panel:         ['Workflow', 'ขั้นตอน'],
+    collapse_panel:         ['Collapse panel', 'ยุบแผง'],
+    augment_section:        ['Augment', 'เพิ่มข้อมูล'],
+    flip_h:                 ['Flip Horizontal', 'พลิกแนวนอน'],
+    flip_v:                 ['Flip Vertical', 'พลิกแนวตั้ง'],
+    rotate_aug:             ['Rotate 90° / 180° / 270°', 'หมุน 90° / 180° / 270°'],
+    brightness_aug:         ['Brightness / Contrast', 'ความสว่าง / คอนทราสต์'],
+    blur_aug:               ['Blur', 'เบลอ'],
+    crop_zoom_aug:          ['Crop / Zoom', 'ครอป / ซูม'],
+    copies_label:           ['Copies (random aug)', 'จำนวนสำเนา (สุ่ม)'],
+    labeled_only:           ['Labeled tiles only', 'เฉพาะไทล์ที่ติดป้าย'],
+    run_augmentation:       ['Run Augmentation', 'รันการเพิ่มข้อมูล'],
+    processing:             ['Processing...', 'กำลังประมวลผล...'],
+    augmented_tiles_label:  ['Augmented tiles', 'ไทล์ที่เพิ่มแล้ว'],
+    clear_aug_tiles:        ['Clear Augmented Tiles', 'ลบไทล์ที่เพิ่ม'],
+    split_section:          ['Split', 'แบ่งชุดข้อมูล'],
+    done_badge:             ['✓ done', '✓ เสร็จ'],
+    train_label:            ['Train', 'เทรน'],
+    val_label:              ['Val', 'ตรวจสอบ'],
+    test_label:             ['Test', 'ทดสอบ'],
+    generate_split:         ['Generate Split', 'สร้างการแบ่ง'],
+    export_section:         ['Export', 'ส่งออก'],
+    export_zip_btn:         ['Export as ZIP', 'ส่งออกเป็น ZIP'],
+    requires_splits:        ['Requires splits to be generated first', 'ต้องสร้างการแบ่งก่อน'],
+    confirm_title:          ['Confirm', 'ยืนยัน'],
+    cancel:                 ['Cancel', 'ยกเลิก'],
+    confirm_btn:            ['Confirm', 'ยืนยัน'],
+    add_class_title:        ['Add New Class', 'เพิ่มคลาสใหม่'],
+    class_name_label:       ['Class name', 'ชื่อคลาส'],
+    class_placeholder:      ['e.g. forest', 'เช่น ป่าไม้'],
+    color_label:            ['Color', 'สี'],
+    add_class_btn:          ['Add Class', 'เพิ่มคลาส'],
+    kmeans_title:           ['K-Means Result', 'ผลลัพธ์ K-Means'],
+    kmeans_instructions:    ['Assign each cluster to a class:', 'กำหนดแต่ละคลัสเตอร์ให้กับคลาส:'],
+    apply_canvas:           ['Apply to Canvas', 'นำไปใช้กับแคนวาส'],
+    shortcuts_title:        ['Keyboard Shortcuts', 'ปุ่มลัด'],
+    close_btn:              ['Close', 'ปิด'],
+    sc_select_class:        ['Select class', 'เลือกคลาส'],
+    sc_save:                ['Save', 'บันทึก'],
+    sc_undo:                ['Undo', 'เลิกทำ'],
+    sc_prevnext:            ['Prev / Next', 'ก่อนหน้า / ถัดไป'],
+    sc_sam_point:           ['SAM point', 'จุด SAM'],
+    sc_sam_neg:             ['SAM neg point', 'จุด SAM เชิงลบ'],
+    sc_sam_box:             ['SAM box', 'กรอบ SAM'],
+    sc_accept_sam:          ['Accept SAM', 'ยืนยัน SAM'],
+    sc_reject_sam:          ['Reject SAM', 'ยกเลิก SAM'],
+    sc_zoom:                ['Zoom', 'ซูม'],
+    sc_pan:                 ['Pan', 'เลื่อน'],
+    // Dynamic strings (use {placeholder} for variables)
+    ready:                  ['Ready', 'พร้อม'],
+    switching_folder:       ['Switching folder...', 'กำลังเปลี่ยนโฟลเดอร์...'],
+    no_tiles:               ['No tiles in this folder', 'ไม่มีไทล์ในโฟลเดอร์นี้'],
+    loading_tiles:          ['Loading tiles...', 'กำลังโหลดไทล์...'],
+    loading:                ['Loading...', 'กำลังโหลด...'],
+    computing_sam:          ['Computing SAM embedding...', 'กำลังคำนวณ SAM...'],
+    running_kmeans:         ['Running K-Means...', 'กำลังรัน K-Means...'],
+    kmeans_applied:         ['K-Means applied', 'นำ K-Means ไปใช้แล้ว'],
+    saved_status:           ['Saved!', 'บันทึกแล้ว!'],
+    no_tiles_remaining:     ['No tiles remaining', 'ไม่มีไทล์เหลือ'],
+    running_sam:            ['Running SAM...', 'กำลังรัน SAM...'],
+    mask_applied:           ['Mask applied', 'นำมาสก์ไปใช้แล้ว'],
+    mask_rejected:          ['Mask rejected', 'ปฏิเสธมาสก์แล้ว'],
+    kmeans_failed:          ['K-Means failed: {detail}', 'K-Means ล้มเหลว: {detail}'],
+    delete_failed:          ['Failed to delete: {detail}', 'ลบไม่สำเร็จ: {detail}'],
+    upload_failed:          ['Upload failed', 'อัปโหลดไม่สำเร็จ'],
+    uploaded_tiles:         ['Uploaded {count} tile(s)', 'อัปโหลด {count} ไทล์สำเร็จ'],
+    select_aug:             ['Select at least one augmentation', 'เลือกการเพิ่มข้อมูลอย่างน้อยหนึ่งรายการ'],
+    segment_min:            ['Each segment must be at least 1%', 'แต่ละส่วนต้องมีอย่างน้อย 1%'],
+    split_success:          ['Split: {train} train / {val} val / {test} test', 'แบ่ง: {train} เทรน / {val} ตรวจสอบ / {test} ทดสอบ'],
+    split_failed:           ['Split failed: {detail}', 'การแบ่งล้มเหลว: {detail}'],
+    removed_aug:            ['Removed {count} augmented tile(s)', 'ลบ {count} ไทล์ที่เพิ่มแล้ว'],
+    clear_failed:           ['Clear failed', 'การล้างล้มเหลว'],
+    created_aug:            ['Created {count} augmented tiles from {src} source tiles', 'สร้าง {count} ไทล์จาก {src} ไทล์ต้นฉบับ'],
+    aug_failed:             ['Augmentation failed', 'การเพิ่มข้อมูลล้มเหลว'],
+    aug_error:              ['Augmentation error: {msg}', 'ข้อผิดพลาดการเพิ่มข้อมูล: {msg}'],
+    export_failed:          ['Export failed', 'การส่งออกล้มเหลว'],
+    export_failed_msg:      ['Export failed: {msg}', 'การส่งออกล้มเหลว: {msg}'],
+    dataset_downloaded:     ['Dataset ZIP downloaded', 'ดาวน์โหลด ZIP ชุดข้อมูลสำเร็จ'],
+    delete_tile_confirm_title: ['Delete Tile', 'ลบไทล์'],
+    delete_tile_confirm_msg:   ['Delete "{name}" and all its associated files?\nThis cannot be undone.',
+                                'ลบ "{name}" และไฟล์ที่เกี่ยวข้องทั้งหมด?\nไม่สามารถยกเลิกได้'],
+    clear_aug_confirm_title:   ['Clear Augmented Tiles', 'ลบไทล์ที่เพิ่ม'],
+    clear_aug_confirm_msg:     ['Delete all augmented tiles (_aug_*) and their labels?\nThis cannot be undone.',
+                                'ลบไทล์ที่เพิ่มทั้งหมด (_aug_*) และป้ายกำกับ?\nไม่สามารถยกเลิกได้'],
+    labeled_count:          ['{labeled} / {total} labeled', '{labeled} / {total} ติดป้ายแล้ว'],
+    augmenting_progress:    ['Augmenting {done} / {total} tiles', 'กำลังเพิ่มข้อมูล {done} / {total} ไทล์'],
+    aug_done_label:         ['Done — {count} tiles created', 'เสร็จแล้ว — สร้าง {count} ไทล์'],
+    clearing_aug:           ['Clearing old augmentations...', 'กำลังลบการเพิ่มข้อมูลเดิม...'],
+    building_zip:           ['Building ZIP… {done}/{total} tiles', 'กำลังสร้าง ZIP… {done}/{total} ไทล์'],
+    downloading:            ['Downloading...', 'กำลังดาวน์โหลด...'],
+    building_zip_status:    ['Building ZIP...', 'กำลังสร้าง ZIP...'],
+    augmenting_status:      ['Augmenting...', 'กำลังเพิ่มข้อมูล...'],
+    generating_splits:      ['Generating splits...', 'กำลังสร้างการแบ่ง...'],
+    clearing_aug_status:    ['Clearing augmented tiles...', 'กำลังลบไทล์ที่เพิ่ม...'],
+    cluster_label:          ['Cluster {index}', 'คลัสเตอร์ {index}'],
+    sam_score:              ['SAM score: {score}', 'คะแนน SAM: {score}'],
+};
+
 /**
  * App - main application logic
  */
@@ -13,6 +147,7 @@ const App = {
     splitFilter: 'all', // 'all' | 'train' | 'val' | 'test'
     splitH1: 70,        // train/val boundary = train%
     splitH2: 85,        // val/test boundary  = train% + val%
+    lang: 'en',         // 'en' | 'th'
 
     activeTool: 'sam',  // sam, brush, eraser
     isDrawing: false,
@@ -23,12 +158,40 @@ const App = {
     kmeansClusterMask: null,
     kmeansCenters: null,
 
+    // ===== i18n helpers =====
+    t(key, params = {}) {
+        const pair = TRANSLATIONS[key];
+        if (!pair) return key;
+        let str = pair[this.lang === 'th' ? 1 : 0];
+        for (const [k, v] of Object.entries(params))
+            str = str.replaceAll(`{${k}}`, v);
+        return str;
+    },
+
+    applyTranslations() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            el.textContent = this.t(el.dataset.i18n);
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            el.title = this.t(el.dataset.i18nTitle);
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            el.placeholder = this.t(el.dataset.i18nPlaceholder);
+        });
+        const langBtn = document.getElementById('btn-lang');
+        if (langBtn) langBtn.textContent = this.lang === 'th' ? 'EN' : 'TH';
+    },
+
     async init() {
         Canvas.init();
         await ClassPanel.init();
         await this.loadFolders();
         await this.loadTileList();
         this.setupEventListeners();
+
+        // Restore language preference
+        this.lang = localStorage.getItem('lang') || 'en';
+        this.applyTranslations();
 
         if (this.tiles.length > 0) {
             await this.navigateTo(0);
@@ -51,7 +214,7 @@ const App = {
             await this.save();
         }
 
-        this.setStatus('Switching folder...');
+        this.setStatus(this.t('switching_folder'));
         const res = await fetch('/api/folders/select', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -67,14 +230,14 @@ const App = {
                 await this.navigateTo(0);
             } else {
                 Canvas.loadMask(new Uint8Array(512 * 512));
-                this.setStatus('No tiles in this folder');
+                this.setStatus(this.t('no_tiles'));
             }
             this.loadStats();
         }
     },
 
     async loadTileList() {
-        this.setStatus('Loading tiles...');
+        this.setStatus(this.t('loading_tiles'));
         // Two parallel requests — no N serial label checks needed
         const [tilesRes, splitsRes] = await Promise.all([
             fetch('/api/tiles'),
@@ -95,7 +258,7 @@ const App = {
 
         this.applyFilter();
         if (this.updateSplitDisplay) this.updateSplitDisplay();
-        this.setStatus('Ready');
+        this.setStatus(this.t('ready'));
     },
 
 
@@ -235,7 +398,7 @@ const App = {
 
         document.getElementById('tile-select').value = index;
         this.updateThumbnailActive();
-        this.setStatus('Loading...');
+        this.setStatus(this.t('loading'));
 
         // Load image
         await Canvas.loadImage(this.currentFilename);
@@ -251,9 +414,9 @@ const App = {
         }
 
         // Precompute SAM embedding
-        this.setStatus('Computing SAM embedding...');
+        this.setStatus(this.t('computing_sam'));
         await SAMClient.embed(this.currentFilename);
-        this.setStatus('Ready');
+        this.setStatus(this.t('ready'));
     },
 
     async decodeLabelMask(b64) {
@@ -317,15 +480,15 @@ const App = {
         const filename = this.currentFilename;
 
         const confirmed = await this.showConfirm(
-            `Delete "${filename}" and all its associated files?\nThis cannot be undone.`,
-            'Delete Tile'
+            this.t('delete_tile_confirm_msg', { name: filename }),
+            this.t('delete_tile_confirm_title')
         );
         if (!confirmed) return;
 
         const res = await fetch(`/api/tiles/${filename}`, { method: 'DELETE' });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            this.toast(`Failed to delete: ${err.detail || res.statusText}`);
+            this.toast(this.t('delete_failed', { detail: err.detail || res.statusText }));
             return;
         }
 
@@ -345,7 +508,7 @@ const App = {
 
         if (this.filteredTiles.length === 0) {
             Canvas.loadMask(new Uint8Array(512 * 512));
-            this.setStatus('No tiles remaining');
+            this.setStatus(this.t('no_tiles_remaining'));
         } else {
             const nextIndex = Math.min(filteredIdx, this.filteredTiles.length - 1);
             await this.navigateTo(nextIndex);
@@ -360,7 +523,7 @@ const App = {
         const btn = document.getElementById('btn-run-kmeans');
         btn.classList.add('loading');
         btn.disabled = true;
-        this.setStatus('Running K-Means...');
+        this.setStatus(this.t('running_kmeans'));
         try {
             const res = await fetch(`/api/kmeans/${this.currentFilename}`, {
                 method: 'POST',
@@ -369,7 +532,7 @@ const App = {
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                this.toast(`K-Means failed: ${err.detail || res.statusText}`);
+                this.toast(this.t('kmeans_failed', { detail: err.detail || res.statusText }));
                 return;
             }
             const data = await res.json();
@@ -379,7 +542,7 @@ const App = {
         } finally {
             btn.classList.remove('loading');
             btn.disabled = false;
-            this.setStatus('Ready');
+            this.setStatus(this.t('ready'));
         }
     },
 
@@ -397,7 +560,7 @@ const App = {
             row.className = 'flex items-center gap-2';
             row.innerHTML = `
                 <div class="w-5 h-5 rounded flex-shrink-0 border border-base-300" style="background:rgb(${r},${g},${b})"></div>
-                <span class="text-xs text-base-content/70 flex-1">Cluster ${i}</span>
+                <span class="text-xs text-base-content/70 flex-1">${this.t('cluster_label', { index: i })}</span>
                 <select class="select select-bordered select-xs w-28" data-cluster="${i}">${opts}</select>`;
             list.appendChild(row);
         }
@@ -418,7 +581,7 @@ const App = {
         document.getElementById('modal-kmeans').close();
         // Keep kmeansClusterMask + kmeansCenters so user can re-assign without re-running
         document.getElementById('btn-reassign-kmeans').classList.remove('hidden');
-        this.setStatus('K-Means applied');
+        this.setStatus(this.t('kmeans_applied'));
     },
 
     clearKMeansState() {
@@ -439,7 +602,7 @@ const App = {
         if (data.status === 'saved') {
             Canvas.isDirty = false;
             this.labeledSet.add(this.currentFilename);
-            this.setStatus('Saved!');
+            this.setStatus(this.t('saved_status'));
             this.updateProgressFromServer();
             this.populateSelect();
             this.updateThumbnailLabeled(this.currentIndex);
@@ -462,7 +625,7 @@ const App = {
             const data = await res.json();
 
             document.getElementById('stats-count').textContent =
-                `${data.labeled} / ${data.total} labeled`;
+                this.t('labeled_count', { labeled: data.labeled, total: data.total });
 
             const barsEl = document.getElementById('stats-bars');
             barsEl.innerHTML = '';
@@ -511,7 +674,7 @@ const App = {
         this.samPointLabels.push(isPositive ? 1 : 0);
 
         Canvas.drawPoint(x, y, isPositive);
-        this.setStatus('Running SAM...');
+        this.setStatus(this.t('running_sam'));
 
         const result = await SAMClient.predict(
             this.currentFilename,
@@ -526,14 +689,14 @@ const App = {
             Canvas.renderSAMPreview(binaryMask);
             this.samHasPreview = true;
             document.getElementById('sam-hint').classList.remove('hidden');
-            this.setStatus(`SAM score: ${best.score.toFixed(3)}`);
+            this.setStatus(this.t('sam_score', { score: best.score.toFixed(3) }));
         }
     },
 
     async onSAMBox(x1, y1, x2, y2) {
         this.resetSAMState();
         Canvas.drawBox(x1, y1, x2, y2);
-        this.setStatus('Running SAM...');
+        this.setStatus(this.t('running_sam'));
 
         const result = await SAMClient.predict(
             this.currentFilename,
@@ -548,20 +711,20 @@ const App = {
             Canvas.renderSAMPreview(binaryMask);
             this.samHasPreview = true;
             document.getElementById('sam-hint').classList.remove('hidden');
-            this.setStatus(`SAM score: ${best.score.toFixed(3)}`);
+            this.setStatus(this.t('sam_score', { score: best.score.toFixed(3) }));
         }
     },
 
     acceptSAM() {
         if (Canvas.acceptSAMPreview()) {
             this.resetSAMState();
-            this.setStatus('Mask applied');
+            this.setStatus(this.t('mask_applied'));
         }
     },
 
     rejectSAM() {
         this.resetSAMState();
-        this.setStatus('Mask rejected');
+        this.setStatus(this.t('mask_rejected'));
     },
 
     setActiveTool(tool) {
@@ -631,20 +794,21 @@ const App = {
             if (!files || files.length === 0) return;
             const fd = new FormData();
             for (const f of files) fd.append('files', f);
-            this.setStatus('Uploading...');
+            this.setStatus(this.t('loading'));
             try {
                 const res  = await fetch('/api/upload-tiles', { method: 'POST', body: fd });
                 const data = await res.json();
                 if (res.ok) {
-                    this.toast(`Uploaded ${data.uploaded.length} tile(s)${data.skipped.length ? `, skipped ${data.skipped.length}` : ''}`, 'success');
+                    const skippedNote = data.skipped.length ? `, skipped ${data.skipped.length}` : '';
+                    this.toast(this.t('uploaded_tiles', { count: data.uploaded.length }) + skippedNote, 'success');
                     await this.loadTileList();
                 } else {
-                    this.toast(data.detail || 'Upload failed');
+                    this.toast(data.detail || this.t('upload_failed'));
                 }
             } catch (e) {
-                this.toast('Upload failed: ' + e.message);
+                this.toast(this.t('upload_failed') + ': ' + e.message);
             } finally {
-                this.setStatus('Ready');
+                this.setStatus(this.t('ready'));
             }
         };
 
@@ -681,6 +845,13 @@ const App = {
             document.getElementById('icon-theme-dark').classList.toggle('hidden', isDark);
             document.getElementById('icon-theme-light').classList.toggle('hidden', !isDark);
         }
+
+        // Language toggle
+        document.getElementById('btn-lang').addEventListener('click', () => {
+            this.lang = this.lang === 'en' ? 'th' : 'en';
+            localStorage.setItem('lang', this.lang);
+            this.applyTranslations();
+        });
 
         // Shortcuts modal
         document.getElementById('btn-shortcuts').addEventListener('click', () =>
@@ -819,13 +990,13 @@ const App = {
             const train = Math.round(this.splitH1);
             const val   = Math.round(this.splitH2 - this.splitH1);
             if (train < 1 || val < 1 || train + val >= 100) {
-                this.toast('Each segment must be at least 1%');
+                this.toast(this.t('segment_min'));
                 return;
             }
             const btn = document.getElementById('btn-generate-split');
             btn.classList.add('loading');
             btn.disabled = true;
-            this.setStatus('Generating splits...');
+            this.setStatus(this.t('generating_splits'));
             try {
                 const res = await fetch('/api/splits', {
                     method: 'POST',
@@ -839,14 +1010,14 @@ const App = {
                     document.getElementById('split-done-badge').classList.remove('hidden');
                     this.applyFilter();
                     await this.loadTileList();
-                    this.toast(`Split: ${data.train} train / ${data.val} val / ${data.test} test`, 'success');
+                    this.toast(this.t('split_success', { train: data.train, val: data.val, test: data.test }), 'success');
                 } else {
-                    this.toast(`Split failed: ${data.detail || res.statusText}`);
+                    this.toast(this.t('split_failed', { detail: data.detail || res.statusText }));
                 }
             } finally {
                 btn.classList.remove('loading');
                 btn.disabled = false;
-                this.setStatus('Ready');
+                this.setStatus(this.t('ready'));
             }
         });
 
@@ -856,29 +1027,29 @@ const App = {
         // Clear augmented tiles
         document.getElementById('btn-clear-aug').addEventListener('click', async () => {
             const confirmed = await this.showConfirm(
-                'Delete all augmented tiles (_aug_*) and their labels?\nThis cannot be undone.',
-                'Clear Augmented Tiles'
+                this.t('clear_aug_confirm_msg'),
+                this.t('clear_aug_confirm_title')
             );
             if (!confirmed) return;
             const btn = document.getElementById('btn-clear-aug');
             btn.disabled = true;
-            this.setStatus('Clearing augmented tiles...');
+            this.setStatus(this.t('clearing_aug_status'));
             try {
                 const res = await fetch('/api/augment', { method: 'DELETE' });
                 const data = await res.json();
                 if (res.ok) {
-                    this.toast(`Removed ${data.deleted_tiles} augmented tile(s)`, 'success');
+                    this.toast(this.t('removed_aug', { count: data.deleted_tiles }), 'success');
                     document.getElementById('aug-done-badge').classList.add('hidden');
                     ['aug-flip_h','aug-flip_v','aug-rotate_90','aug-brightness','aug-blur','aug-crop_zoom']
                         .forEach(id => { document.getElementById(id).checked = false; });
                     await this.loadTileList();
                     this.loadStats();
                 } else {
-                    this.toast(data.detail || 'Clear failed');
+                    this.toast(data.detail || this.t('clear_failed'));
                 }
             } finally {
                 btn.disabled = false;
-                this.setStatus('Ready');
+                this.setStatus(this.t('ready'));
             }
         });
 
@@ -903,7 +1074,7 @@ const App = {
                     else transforms.push(val);
                 }
             }
-            if (transforms.length === 0) { this.toast('Select at least one augmentation'); return; }
+            if (transforms.length === 0) { this.toast(this.t('select_aug')); return; }
             const btn = document.getElementById('btn-augment');
             const progressEl  = document.getElementById('aug-progress');
             const progressBar = document.getElementById('aug-progress-bar');
@@ -914,8 +1085,8 @@ const App = {
             progressEl.classList.remove('hidden');
             progressBar.value = 0;
             progressPct.textContent = '0%';
-            progressLbl.textContent = 'Clearing old augmentations...';
-            this.setStatus('Augmenting...');
+            progressLbl.textContent = this.t('clearing_aug');
+            this.setStatus(this.t('augmenting_status'));
 
             try {
                 const res = await fetch('/api/augment', {
@@ -944,16 +1115,16 @@ const App = {
                         const evt = JSON.parse(line.slice(6));
                         lastData = evt;
                         if (evt.type === 'start') {
-                            progressLbl.textContent = `Augmenting 0 / ${evt.total} tiles`;
+                            progressLbl.textContent = this.t('augmenting_progress', { done: 0, total: evt.total });
                         } else if (evt.type === 'progress') {
                             const pct = Math.round(evt.done / evt.total * 100);
                             progressBar.value = pct;
                             progressPct.textContent = `${pct}%`;
-                            progressLbl.textContent = `Augmenting ${evt.done} / ${evt.total} tiles`;
+                            progressLbl.textContent = this.t('augmenting_progress', { done: evt.done, total: evt.total });
                         } else if (evt.type === 'done') {
                             progressBar.value = 100;
                             progressPct.textContent = '100%';
-                            progressLbl.textContent = `Done — ${evt.created} tiles created`;
+                            progressLbl.textContent = this.t('aug_done_label', { count: evt.created });
                         }
                     }
                 }
@@ -964,20 +1135,20 @@ const App = {
                     augBadge.classList.remove('hidden');
                     await this.loadTileList();
                     this.loadStats();
-                    this.toast(`Created ${lastData.created} augmented tiles from ${lastData.augmented} source tiles`, 'success');
+                    this.toast(this.t('created_aug', { count: lastData.created, src: lastData.augmented }), 'success');
                 } else {
-                    this.toast('Augmentation failed');
+                    this.toast(this.t('aug_failed'));
                 }
             } catch (e) {
-                this.toast('Augmentation error: ' + e.message);
+                this.toast(this.t('aug_error', { msg: e.message }));
             } finally {
                 btn.disabled = false;
-                this.setStatus('Ready');
+                this.setStatus(this.t('ready'));
                 setTimeout(() => progressEl.classList.add('hidden'), 3000);
             }
         });
 
-        // Export dataset as ZIP
+        // Export dataset as ZIP (two-step: POST→SSE build, GET→download)
         document.getElementById('btn-export-zip').addEventListener('click', async () => {
             const format = document.getElementById('export-zip-format').value;
             const btn = document.getElementById('btn-export-zip');
@@ -988,44 +1159,56 @@ const App = {
             bar.value = 0;
             wrap.classList.remove('hidden');
             txt.textContent = '0%';
-            this.setStatus('Building ZIP...');
+            this.setStatus(this.t('building_zip_status'));
             try {
-                const res = await fetch(`/api/export-zip?format=${format}`);
+                // Step 1: POST to build ZIP with SSE progress
+                const res = await fetch(`/api/export-zip?format=${format}`, { method: 'POST' });
                 if (!res.ok) {
-                    const data = await res.json();
-                    this.toast(data.detail || 'Export failed');
+                    const data = await res.json().catch(() => ({}));
+                    this.toast(data.detail || this.t('export_failed'));
                     return;
                 }
-                const total = parseInt(res.headers.get('content-length') || '0');
                 const reader = res.body.getReader();
-                const chunks = [];
-                let received = 0;
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    chunks.push(value);
-                    received += value.length;
-                    if (total > 0) {
-                        const pct = Math.round(received / total * 100);
-                        bar.value = pct;
-                        txt.textContent = `${pct}%`;
-                        this.setStatus(`Downloading… ${pct}%`);
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let done = false;
+                while (!done) {
+                    const { done: streamDone, value } = await reader.read();
+                    if (streamDone) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const evt = JSON.parse(line.slice(6));
+                        if (evt.type === 'progress') {
+                            const pct = Math.round(evt.done / evt.total * 100);
+                            bar.value = pct;
+                            txt.textContent = `${pct}%`;
+                            this.setStatus(this.t('building_zip', { done: evt.done, total: evt.total }));
+                        } else if (evt.type === 'done') {
+                            bar.value = 100;
+                            txt.textContent = '100%';
+                            done = true;
+                        } else if (evt.type === 'error') {
+                            throw new Error(evt.message || this.t('export_failed'));
+                        }
                     }
                 }
-                const blob = new Blob(chunks, { type: 'application/zip' });
-                const url = URL.createObjectURL(blob);
+                // Step 2: GET to download the pre-built ZIP
+                this.setStatus(this.t('downloading'));
                 const a = document.createElement('a');
-                a.href = url;
+                a.href = `/api/export-zip/download?format=${format}`;
                 a.download = `dataset_${format}.zip`;
                 a.click();
-                URL.revokeObjectURL(url);
-                this.toast('Dataset ZIP downloaded', 'success');
+                this.toast(this.t('dataset_downloaded'), 'success');
+                setTimeout(() => { wrap.classList.add('hidden'); this.setStatus(this.t('ready')); }, 2000);
             } catch (e) {
-                this.toast('Export failed: ' + e.message);
+                this.toast(this.t('export_failed_msg', { msg: e.message }));
+                wrap.classList.add('hidden');
+                this.setStatus(this.t('ready'));
             } finally {
                 btn.disabled = false;
-                wrap.classList.add('hidden');
-                this.setStatus('Ready');
             }
         });
 

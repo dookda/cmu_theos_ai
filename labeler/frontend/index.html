@@ -14,7 +14,7 @@
     <aside id="sidebar-left" class="w-56 bg-base-100 border-r border-base-300 flex flex-col overflow-hidden flex-shrink-0">
         <div class="px-3 pt-3 pb-3 border-b border-base-300 flex items-center justify-between">
             <h1 class="text-lg font-bold text-primary">Dabeler</h1>
-            <button id="btn-toggle-left" class="btn btn-ghost btn-xs btn-square" title="Collapse sidebar">
+            <button id="btn-toggle-left" class="btn btn-ghost btn-xs btn-square" data-i18n-title="collapse_panel" title="Collapse sidebar">
                 <svg id="icon-toggle-left" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
@@ -26,8 +26,8 @@
             <!-- Classes -->
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Classes</div>
-                    <button id="btn-add-class" class="btn btn-sm btn-ghost btn-square" title="Add class">+</button>
+                    <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider" data-i18n="classes">Classes</div>
+                    <button id="btn-add-class" class="btn btn-sm btn-ghost btn-square" data-i18n-title="add_class" title="Add class">+</button>
                 </div>
                 <div id="class-list" class="flex flex-col gap-1"></div>
             </div>
@@ -36,53 +36,53 @@
             <div>
                 <div class="tabs tabs-bordered mb-2" id="tool-tabs">
                     <button class="tab tab-active whitespace-nowrap" data-tab="sam">SAM</button>
-                    <button class="tab whitespace-nowrap" data-tab="brush">Brush</button>
+                    <button class="tab whitespace-nowrap" data-tab="brush" data-i18n="brush_tab">Brush</button>
                     <button class="tab whitespace-nowrap" data-tab="kmeans">K-Means</button>
                 </div>
 
                 <!-- SAM panel -->
                 <div id="tab-panel-sam" class="flex flex-col gap-2">
                     <label class="label py-0"><span class="label-text text-xs">SAM Grow: <span id="grow-value" class="font-semibold">0</span>px</span></label>
-                    <input type="range" id="grow-slider" min="-10" max="10" value="0" class="range range-accent">
+                    <input type="range" id="grow-slider" min="-10" max="10" value="0" class="range range-xs range-accent">
                 </div>
 
                 <!-- Brush panel -->
                 <div id="tab-panel-brush" class="hidden flex flex-col gap-2">
                     <div class="join w-full">
-                        <button class="join-item btn btn-sm flex-1" data-tool="brush">Brush</button>
-                        <button class="join-item btn btn-sm flex-1" data-tool="eraser">Eraser</button>
+                        <button class="join-item btn btn-sm flex-1" data-tool="brush" data-i18n="brush_tool">Brush</button>
+                        <button class="join-item btn btn-sm flex-1" data-tool="eraser" data-i18n="eraser_tool">Eraser</button>
                     </div>
                     <div>
                         <label class="label py-0"><span class="label-text text-xs">Brush: <span id="brush-size-value" class="font-semibold">10</span>px</span></label>
-                        <input type="range" id="brush-size" min="1" max="50" value="10" class="range range-primary">
+                        <input type="range" id="brush-size" min="1" max="50" value="10" class="range range-xs range-primary">
                     </div>
                 </div>
 
                 <!-- K-Means panel -->
                 <div id="tab-panel-kmeans" class="hidden flex flex-col gap-2">
                     <label class="label py-0"><span class="label-text text-xs">Clusters: <span id="kmeans-k-value" class="font-semibold">4</span></span></label>
-                    <input type="range" id="kmeans-k" min="2" max="16" value="4" class="range range-warning">
-                    <button id="btn-run-kmeans" class="btn btn-sm btn-warning w-full mt-1">Run K-Means</button>
-                    <button id="btn-reassign-kmeans" class="btn btn-sm btn-outline btn-warning w-full hidden">Re-assign Clusters</button>
+                    <input type="range" id="kmeans-k" min="2" max="16" value="4" class="range range-xs range-warning">
+                    <button id="btn-run-kmeans" class="btn btn-sm btn-warning w-full mt-1" data-i18n="run_kmeans">Run K-Means</button>
+                    <button id="btn-reassign-kmeans" class="btn btn-sm btn-outline btn-warning w-full hidden" data-i18n="reassign_clusters">Re-assign Clusters</button>
                 </div>
             </div>
 
             <!-- Opacity (always visible) -->
             <div>
                 <label class="label py-0"><span class="label-text text-xs">Opacity: <span id="opacity-value" class="font-semibold">50</span>%</span></label>
-                <input type="range" id="opacity-slider" min="0" max="100" value="50" class="range range-primary">
+                <input type="range" id="opacity-slider" min="0" max="100" value="50" class="range range-xs range-primary">
             </div>
 
             <div class="divider my-0"></div>
 
             <!-- Image Adjust -->
             <div>
-                <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-2">Image Adjust</div>
+                <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wider mb-2" data-i18n="image_adjust">Image Adjust</div>
                 <label class="label py-0"><span class="label-text text-xs">Brightness: <span id="brightness-value" class="font-semibold">100</span>%</span></label>
-                <input type="range" id="brightness-slider" min="0" max="200" value="100" class="range range-secondary">
+                <input type="range" id="brightness-slider" min="0" max="200" value="100" class="range range-xs range-secondary">
                 <label class="label py-0 mt-1"><span class="label-text text-xs">Contrast: <span id="contrast-value" class="font-semibold">100</span>%</span></label>
-                <input type="range" id="contrast-slider" min="0" max="200" value="100" class="range range-secondary">
-                <button id="btn-reset-adjust" class="btn btn-ghost mt-1 text-base-content/50">Reset</button>
+                <input type="range" id="contrast-slider" min="0" max="200" value="100" class="range range-xs range-secondary">
+                <button id="btn-reset-adjust" class="btn btn-ghost mt-1 text-base-content/50" data-i18n="reset">Reset</button>
             </div>
 
             <div class="divider my-0"></div>
@@ -90,10 +90,10 @@
             <!-- Dataset coverage stats -->
             <div id="stats-panel">
                 <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Coverage</span>
+                    <span class="text-xs font-semibold text-base-content/40 uppercase tracking-wider" data-i18n="coverage">Coverage</span>
                     <div class="flex items-center gap-1">
                         <span id="stats-count" class="text-[10px] font-mono text-base-content/40">— / —</span>
-                        <button id="btn-refresh-stats" class="btn btn-ghost btn-square" style="width:16px;height:16px;min-height:0;padding:0;font-size:10px" title="Refresh stats">↻</button>
+                        <button id="btn-refresh-stats" class="btn btn-ghost btn-square" style="width:16px;height:16px;min-height:0;padding:0;font-size:10px" data-i18n-title="refresh_stats" title="Refresh stats">↻</button>
                     </div>
                 </div>
                 <div id="stats-bars" class="flex flex-col gap-1"></div>
@@ -105,10 +105,10 @@
     <!-- Thumbnail strip -->
     <div id="sidebar-thumb" class="w-28 bg-base-100 border-r border-base-300 flex flex-col overflow-hidden flex-shrink-0">
         <!-- Upload zone lives here — close to the tiles it adds -->
-        <div id="upload-zone" class="flex items-center justify-center gap-1.5 border-b border-dashed border-base-300 px-2 py-2 cursor-pointer hover:bg-primary/5 hover:border-primary transition-colors" title="Click or drop images to upload tiles">
+        <div id="upload-zone" class="flex items-center justify-center gap-1.5 border-b border-dashed border-base-300 px-2 py-2 cursor-pointer hover:bg-primary/5 hover:border-primary transition-colors" data-i18n-title="upload_hint" title="Click or drop images to upload tiles">
             <input type="file" id="upload-input" multiple accept="image/png,image/jpeg" class="hidden">
             <span class="text-sm leading-none opacity-50">⬆</span>
-            <span class="text-[11px] text-base-content/40 whitespace-nowrap">Upload</span>
+            <span class="text-[11px] text-base-content/40 whitespace-nowrap" data-i18n="upload_btn">Upload</span>
         </div>
         <div id="thumbnail-list" class="flex-1 overflow-y-auto p-1.5 flex flex-col gap-1.5"></div>
     </div>
@@ -117,12 +117,12 @@
     <div class="flex-1 flex flex-col overflow-hidden relative">
 
         <!-- Floating re-open tabs (visible only when panel is collapsed) -->
-        <button id="tab-left" class="panel-tab hidden" title="Open sidebar">
+        <button id="tab-left" class="panel-tab hidden" data-i18n-title="open_sidebar" title="Open sidebar">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
             </svg>
         </button>
-        <button id="tab-right" class="panel-tab hidden" title="Open workflow panel">
+        <button id="tab-right" class="panel-tab hidden" data-i18n-title="open_workflow" title="Open workflow panel">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
             </svg>
@@ -135,7 +135,8 @@
             </div>
             <span id="progress-text" class="text-xs font-medium text-base-content/60">0 / 0</span>
             <div id="status-msg" class="text-xs font-medium text-primary min-w-[60px]"></div>
-            <button id="btn-theme" class="btn btn-ghost btn-xs btn-square" title="Toggle dark mode">
+            <button id="btn-lang" class="btn btn-ghost btn-xs font-mono" data-i18n-title="switch_lang" title="Switch language">TH</button>
+            <button id="btn-theme" class="btn btn-ghost btn-xs btn-square" data-i18n-title="toggle_dark" title="Toggle dark mode">
                 <svg id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
                 </svg>
@@ -158,18 +159,18 @@
 
                 <!-- View controls -->
                 <div class="flex flex-col items-center gap-1 bg-base-100 rounded-box p-2 shadow">
-                    <button id="btn-zoom-in" title="Zoom in" class="btn btn-sm btn-square btn-ghost">+</button>
+                    <button id="btn-zoom-in" data-i18n-title="zoom_in" title="Zoom in" class="btn btn-sm btn-square btn-ghost">+</button>
                     <div id="zoom-info" class="text-[10px] text-base-content/40 font-mono">100%</div>
-                    <button id="btn-zoom-out" title="Zoom out" class="btn btn-sm btn-square btn-ghost">&minus;</button>
+                    <button id="btn-zoom-out" data-i18n-title="zoom_out" title="Zoom out" class="btn btn-sm btn-square btn-ghost">&minus;</button>
                     <div class="divider my-0"></div>
-                    <button id="btn-pan-up" title="Pan up" class="btn btn-sm btn-square btn-ghost">&uarr;</button>
+                    <button id="btn-pan-up" data-i18n-title="pan_up" title="Pan up" class="btn btn-sm btn-square btn-ghost">&uarr;</button>
                     <div class="flex gap-0.5">
-                        <button id="btn-pan-left" title="Pan left" class="btn btn-sm btn-square btn-ghost">&larr;</button>
-                        <button id="btn-pan-right" title="Pan right" class="btn btn-sm btn-square btn-ghost">&rarr;</button>
+                        <button id="btn-pan-left" data-i18n-title="pan_left" title="Pan left" class="btn btn-sm btn-square btn-ghost">&larr;</button>
+                        <button id="btn-pan-right" data-i18n-title="pan_right" title="Pan right" class="btn btn-sm btn-square btn-ghost">&rarr;</button>
                     </div>
-                    <button id="btn-pan-down" title="Pan down" class="btn btn-sm btn-square btn-ghost">&darr;</button>
+                    <button id="btn-pan-down" data-i18n-title="pan_down" title="Pan down" class="btn btn-sm btn-square btn-ghost">&darr;</button>
                     <div class="divider my-0"></div>
-                    <button id="btn-reset-view" title="Reset view" class="btn btn-square btn-ghost text-[11px]">Fit</button>
+                    <button id="btn-reset-view" data-i18n="reset_view_btn" data-i18n-title="reset_view_title" title="Reset view" class="btn btn-square btn-ghost text-[11px]">Fit</button>
                 </div>
             </div>
 
@@ -183,26 +184,26 @@
         <!-- Bottom nav — edit actions left, navigation centre, delete isolated right -->
         <nav class="flex items-center gap-2 px-4 py-2.5 bg-base-100 border-t border-base-300">
             <!-- Edit actions -->
-            <button id="btn-undo" title="Undo (Z)" class="btn btn-sm btn-ghost">Undo</button>
-            <button id="btn-clear" title="Clear" class="btn btn-sm btn-outline">Clear</button>
-            <button id="btn-save" title="Save (S)" class="btn btn-sm btn-primary">Save</button>
+            <button id="btn-undo" data-i18n="undo" data-i18n-title="undo" title="Undo (Z)" class="btn btn-sm btn-ghost">Undo</button>
+            <button id="btn-clear" data-i18n="clear" title="Clear" class="btn btn-sm btn-outline">Clear</button>
+            <button id="btn-save" data-i18n="save" title="Save (S)" class="btn btn-sm btn-primary">Save</button>
 
             <div class="divider divider-horizontal mx-0"></div>
 
             <!-- Navigation -->
-            <button id="btn-prev" title="Previous tile" class="btn btn-sm btn-ghost">&larr;</button>
+            <button id="btn-prev" data-i18n-title="prev_tile" title="Previous tile" class="btn btn-sm btn-ghost">&larr;</button>
             <select id="tile-select" class="select select-bordered select-sm max-w-[180px]"></select>
-            <button id="btn-next" title="Next tile" class="btn btn-sm btn-ghost">&rarr;</button>
+            <button id="btn-next" data-i18n-title="next_tile" title="Next tile" class="btn btn-sm btn-ghost">&rarr;</button>
             <label class="label cursor-pointer gap-2 ml-1">
                 <input type="checkbox" id="filter-unlabeled" class="checkbox checkbox-primary">
-                <span class="label-text text-xs">Unlabeled only</span>
+                <span class="label-text text-xs" data-i18n="unlabeled_only">Unlabeled only</span>
             </label>
 
             <!-- Delete + shortcuts — isolated far right with spacer -->
             <div class="flex-1"></div>
             <div class="divider divider-horizontal mx-0"></div>
-            <button id="btn-shortcuts" class="btn btn-sm btn-circle btn-ghost opacity-40 hover:opacity-100 transition-opacity" title="Keyboard shortcuts">?</button>
-            <button id="btn-delete-tile" title="Delete tile and label" class="btn btn-sm btn-error btn-outline">Delete</button>
+            <button id="btn-shortcuts" class="btn btn-sm btn-circle btn-ghost opacity-40 hover:opacity-100 transition-opacity" data-i18n-title="keyboard_shortcuts" title="Keyboard shortcuts">?</button>
+            <button id="btn-delete-tile" data-i18n="delete_tile_btn" data-i18n-title="delete_tile_title" title="Delete tile and label" class="btn btn-sm btn-error btn-outline">Delete</button>
         </nav>
 
     </div>
@@ -210,8 +211,8 @@
     <!-- Right panel — numbered workflow steps -->
     <aside id="sidebar-right" class="w-56 bg-base-100 border-l border-base-300 flex flex-col overflow-hidden flex-shrink-0">
         <div class="px-3 pt-3 pb-2 border-b border-base-300 flex items-center justify-between">
-            <span class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Workflow</span>
-            <button id="btn-toggle-right" class="btn btn-ghost btn-xs btn-square" title="Collapse panel">
+            <span class="text-xs font-semibold text-base-content/40 uppercase tracking-wider" data-i18n="workflow_panel">Workflow</span>
+            <button id="btn-toggle-right" class="btn btn-ghost btn-xs btn-square" data-i18n-title="collapse_panel" title="Collapse panel">
                 <svg id="icon-toggle-right" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
@@ -224,59 +225,59 @@
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-1.5">
                         <span class="badge badge-neutral font-mono text-[10px]">1</span>
-                        <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Augment</span>
+                        <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider" data-i18n="augment_section">Augment</span>
                     </div>
                     <span id="aug-done-badge" class="badge badge-success hidden"></span>
                 </div>
                 <div class="flex flex-col gap-1">
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="aug-flip_h" class="checkbox" checked>
-                        <span class="text-xs">Flip Horizontal</span>
+                        <input type="checkbox" id="aug-flip_h" class="checkbox">
+                        <span class="text-xs" data-i18n="flip_h">Flip Horizontal</span>
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="aug-flip_v" class="checkbox" checked>
-                        <span class="text-xs">Flip Vertical</span>
+                        <input type="checkbox" id="aug-flip_v" class="checkbox">
+                        <span class="text-xs" data-i18n="flip_v">Flip Vertical</span>
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="aug-rotate_90" class="checkbox">
-                        <span class="text-xs">Rotate 90° / 180° / 270°</span>
+                        <span class="text-xs" data-i18n="rotate_aug">Rotate 90° / 180° / 270°</span>
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="aug-brightness" class="checkbox">
-                        <span class="text-xs">Brightness / Contrast</span>
+                        <span class="text-xs" data-i18n="brightness_aug">Brightness / Contrast</span>
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="aug-blur" class="checkbox">
-                        <span class="text-xs">Blur</span>
+                        <span class="text-xs" data-i18n="blur_aug">Blur</span>
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="aug-crop_zoom" class="checkbox">
-                        <span class="text-xs">Crop / Zoom</span>
+                        <span class="text-xs" data-i18n="crop_zoom_aug">Crop / Zoom</span>
                     </label>
                 </div>
                 <div class="flex justify-between mt-2 mb-0.5">
-                    <span class="text-xs text-base-content/60">Copies (random aug)</span>
+                    <span class="text-xs text-base-content/60" data-i18n="copies_label">Copies (random aug)</span>
                     <span class="text-xs font-mono text-base-content/60" id="aug-n-val">3</span>
                 </div>
-                <input type="range" id="aug-n" min="1" max="10" value="3" class="range w-full">
+                <input type="range" id="aug-n" min="1" max="10" value="3" class="range range-xs w-full">
                 <label class="flex items-center gap-2 mt-2 cursor-pointer">
                     <input type="checkbox" id="aug-labeled-only" class="checkbox" checked>
-                    <span class="text-xs">Labeled tiles only</span>
+                    <span class="text-xs" data-i18n="labeled_only">Labeled tiles only</span>
                 </label>
-                <button id="btn-augment" class="btn btn-sm btn-warning w-full mt-2">Run Augmentation</button>
+                <button id="btn-augment" class="btn btn-sm btn-warning w-full mt-2" data-i18n="run_augmentation">Run Augmentation</button>
                 <!-- Augmentation progress -->
                 <div id="aug-progress" class="hidden mt-2">
                     <div class="flex items-center justify-between mb-1">
-                        <span id="aug-progress-label" class="text-xs text-base-content/50">Processing...</span>
+                        <span id="aug-progress-label" class="text-xs text-base-content/50" data-i18n="processing">Processing...</span>
                         <span id="aug-progress-pct" class="text-xs font-mono text-warning">0%</span>
                     </div>
                     <progress id="aug-progress-bar" class="progress progress-warning w-full h-2" value="0" max="100"></progress>
                 </div>
                 <div id="aug-info" class="hidden flex items-center justify-between mt-1.5 px-1">
-                    <span class="text-xs text-base-content/50">Augmented tiles</span>
+                    <span class="text-xs text-base-content/50" data-i18n="augmented_tiles_label">Augmented tiles</span>
                     <span id="aug-count" class="text-xs font-mono font-bold text-warning">0</span>
                 </div>
-                <button id="btn-clear-aug" class="btn btn-sm btn-ghost w-full mt-1 text-error/60 hover:text-error">Clear Augmented Tiles</button>
+                <button id="btn-clear-aug" class="btn btn-sm btn-ghost w-full mt-1 text-error/60 hover:text-error" data-i18n="clear_aug_tiles">Clear Augmented Tiles</button>
             </div>
 
             <div class="divider my-0"></div>
@@ -286,24 +287,24 @@
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-1.5">
                         <span class="badge badge-neutral font-mono text-[10px]">2</span>
-                        <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Split</span>
+                        <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider" data-i18n="split_section">Split</span>
                     </div>
-                    <span id="split-done-badge" class="badge badge-success hidden">✓ done</span>
+                    <span id="split-done-badge" class="badge badge-success hidden" data-i18n="done_badge">✓ done</span>
                 </div>
                 <!-- Section labels — widths updated by JS to match bar segments -->
                 <div class="flex text-center mb-1 overflow-hidden" style="min-height:38px">
                     <div id="split-lbl-train" class="overflow-hidden flex-shrink-0" style="width:70%">
-                        <div class="text-[10px] font-semibold text-success leading-tight">Train</div>
+                        <div class="text-[10px] font-semibold text-success leading-tight" data-i18n="train_label">Train</div>
                         <div class="text-sm font-bold text-success font-mono leading-tight" id="split-count-train">-</div>
                         <div class="text-[10px] text-success/60 font-mono leading-tight"><span id="split-train-val">70</span>%</div>
                     </div>
                     <div id="split-lbl-val" class="overflow-hidden flex-shrink-0" style="width:15%">
-                        <div class="text-[10px] font-semibold text-warning leading-tight">Val</div>
+                        <div class="text-[10px] font-semibold text-warning leading-tight" data-i18n="val_label">Val</div>
                         <div class="text-sm font-bold text-warning font-mono leading-tight" id="split-count-val">-</div>
                         <div class="text-[10px] text-warning/60 font-mono leading-tight"><span id="split-val-val">15</span>%</div>
                     </div>
                     <div id="split-lbl-test" class="overflow-hidden flex-1">
-                        <div class="text-[10px] font-semibold text-error leading-tight">Test</div>
+                        <div class="text-[10px] font-semibold text-error leading-tight" data-i18n="test_label">Test</div>
                         <div class="text-sm font-bold text-error font-mono leading-tight" id="split-count-test">-</div>
                         <div class="text-[10px] text-error/60 font-mono leading-tight"><span id="split-test-val">15</span>%</div>
                     </div>
@@ -314,7 +315,7 @@
                     <div id="split-handle-2" class="split-handle"></div>
                 </div>
                 <div id="split-preview" class="text-[11px] text-base-content/30 mt-1.5 hidden"></div>
-                <button id="btn-generate-split" class="btn btn-sm btn-accent w-full mt-2">Generate Split</button>
+                <button id="btn-generate-split" class="btn btn-sm btn-accent w-full mt-2" data-i18n="generate_split">Generate Split</button>
             </div>
 
             <div class="divider my-0"></div>
@@ -323,7 +324,7 @@
             <div>
                 <div class="flex items-center gap-1.5 mb-2">
                     <span class="badge badge-neutral font-mono text-[10px]">3</span>
-                    <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Export</span>
+                    <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider" data-i18n="export_section">Export</span>
                 </div>
                 <select id="export-zip-format" class="select select-bordered select-sm w-full mb-2">
                     <option value="yolo_detect">YOLO Detection</option>
@@ -331,12 +332,12 @@
                     <option value="semantic">Semantic Masks</option>
                     <option value="coco">COCO Instance Segmentation</option>
                 </select>
-                <button id="btn-export-zip" class="btn btn-sm btn-primary w-full">Export as ZIP</button>
+                <button id="btn-export-zip" class="btn btn-sm btn-primary w-full" data-i18n="export_zip_btn">Export as ZIP</button>
                 <div id="export-progress-wrap" class="hidden mt-2">
                     <progress id="export-progress-bar" class="progress progress-primary w-full" value="0" max="100"></progress>
                     <div class="text-[11px] text-base-content/50 text-center mt-0.5" id="export-progress-text">0%</div>
                 </div>
-                <div class="text-[11px] text-base-content/30 mt-1">Requires splits to be generated first</div>
+                <div class="text-[11px] text-base-content/30 mt-1" data-i18n="requires_splits">Requires splits to be generated first</div>
             </div>
 
         </div>
@@ -348,8 +349,8 @@
             <h3 id="modal-confirm-title" class="font-bold text-base mb-2">Confirm</h3>
             <p id="modal-confirm-message" class="text-sm text-base-content/70 whitespace-pre-line"></p>
             <div class="modal-action mt-4">
-                <button id="btn-confirm-cancel" class="btn btn-sm btn-ghost">Cancel</button>
-                <button id="btn-confirm-ok" class="btn btn-sm btn-error">Confirm</button>
+                <button id="btn-confirm-cancel" class="btn btn-sm btn-ghost" data-i18n="cancel">Cancel</button>
+                <button id="btn-confirm-ok" class="btn btn-sm btn-error" data-i18n="confirm_btn">Confirm</button>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -361,20 +362,20 @@
     <!-- Add Class Modal -->
     <dialog id="modal-add-class" class="modal">
         <div class="modal-box w-72">
-            <h3 class="font-bold text-base mb-4">Add New Class</h3>
+            <h3 class="font-bold text-base mb-4" data-i18n="add_class_title">Add New Class</h3>
             <div class="flex flex-col gap-3">
                 <div>
-                    <label class="label py-0 mb-1"><span class="label-text text-xs">Class name</span></label>
-                    <input type="text" id="new-class-name" placeholder="e.g. forest" class="input input-bordered w-full">
+                    <label class="label py-0 mb-1"><span class="label-text text-xs" data-i18n="class_name_label">Class name</span></label>
+                    <input type="text" id="new-class-name" data-i18n-placeholder="class_placeholder" placeholder="e.g. forest" class="input input-bordered w-full">
                 </div>
                 <div>
-                    <label class="label py-0 mb-1"><span class="label-text text-xs">Color</span></label>
+                    <label class="label py-0 mb-1"><span class="label-text text-xs" data-i18n="color_label">Color</span></label>
                     <input type="color" id="new-class-color" value="#22c55e" class="w-full h-10 cursor-pointer rounded-lg border border-base-300 p-1">
                 </div>
             </div>
             <div class="modal-action mt-4">
-                <button id="btn-cancel-class" class="btn btn-sm btn-ghost">Cancel</button>
-                <button id="btn-confirm-class" class="btn btn-sm btn-primary">Add Class</button>
+                <button id="btn-cancel-class" class="btn btn-sm btn-ghost" data-i18n="cancel">Cancel</button>
+                <button id="btn-confirm-class" class="btn btn-sm btn-primary" data-i18n="add_class_btn">Add Class</button>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -383,12 +384,12 @@
     <!-- K-Means Modal -->
     <dialog id="modal-kmeans" class="modal">
         <div class="modal-box w-80">
-            <h3 class="font-bold text-base mb-1">K-Means Result</h3>
-            <p class="text-xs text-base-content/50 mb-3">Assign each cluster to a class:</p>
+            <h3 class="font-bold text-base mb-1" data-i18n="kmeans_title">K-Means Result</h3>
+            <p class="text-xs text-base-content/50 mb-3" data-i18n="kmeans_instructions">Assign each cluster to a class:</p>
             <div id="kmeans-cluster-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1"></div>
             <div class="modal-action mt-4">
-                <button id="btn-kmeans-cancel" class="btn btn-sm btn-ghost">Cancel</button>
-                <button id="btn-kmeans-apply" class="btn btn-sm btn-primary">Apply to Canvas</button>
+                <button id="btn-kmeans-cancel" class="btn btn-sm btn-ghost" data-i18n="cancel">Cancel</button>
+                <button id="btn-kmeans-apply" class="btn btn-sm btn-primary" data-i18n="apply_canvas">Apply to Canvas</button>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -397,22 +398,22 @@
     <!-- Shortcuts Modal -->
     <dialog id="modal-shortcuts" class="modal">
         <div class="modal-box w-72">
-            <h3 class="font-bold text-base mb-4">Keyboard Shortcuts</h3>
+            <h3 class="font-bold text-base mb-4" data-i18n="shortcuts_title">Keyboard Shortcuts</h3>
             <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                <span class="text-base-content/50">Select class</span><kbd class="kbd justify-self-end">1 – 7</kbd>
-                <span class="text-base-content/50">Save</span><kbd class="kbd justify-self-end">S</kbd>
-                <span class="text-base-content/50">Undo</span><kbd class="kbd justify-self-end">Z</kbd>
-                <span class="text-base-content/50">Prev / Next</span><kbd class="kbd justify-self-end">← →</kbd>
-                <span class="text-base-content/50">SAM point</span><kbd class="kbd justify-self-end">Click</kbd>
-                <span class="text-base-content/50">SAM neg point</span><kbd class="kbd justify-self-end">R-click</kbd>
-                <span class="text-base-content/50">SAM box</span><kbd class="kbd justify-self-end">Drag</kbd>
-                <span class="text-base-content/50">Accept SAM</span><kbd class="kbd justify-self-end">Enter</kbd>
-                <span class="text-base-content/50">Reject SAM</span><kbd class="kbd justify-self-end">Esc</kbd>
-                <span class="text-base-content/50">Zoom</span><kbd class="kbd justify-self-end">Scroll</kbd>
-                <span class="text-base-content/50">Pan</span><kbd class="kbd justify-self-end">Mid drag</kbd>
+                <span class="text-base-content/50" data-i18n="sc_select_class">Select class</span><kbd class="kbd justify-self-end">1 – 7</kbd>
+                <span class="text-base-content/50" data-i18n="sc_save">Save</span><kbd class="kbd justify-self-end">S</kbd>
+                <span class="text-base-content/50" data-i18n="sc_undo">Undo</span><kbd class="kbd justify-self-end">Z</kbd>
+                <span class="text-base-content/50" data-i18n="sc_prevnext">Prev / Next</span><kbd class="kbd justify-self-end">← →</kbd>
+                <span class="text-base-content/50" data-i18n="sc_sam_point">SAM point</span><kbd class="kbd justify-self-end">Click</kbd>
+                <span class="text-base-content/50" data-i18n="sc_sam_neg">SAM neg point</span><kbd class="kbd justify-self-end">R-click</kbd>
+                <span class="text-base-content/50" data-i18n="sc_sam_box">SAM box</span><kbd class="kbd justify-self-end">Drag</kbd>
+                <span class="text-base-content/50" data-i18n="sc_accept_sam">Accept SAM</span><kbd class="kbd justify-self-end">Enter</kbd>
+                <span class="text-base-content/50" data-i18n="sc_reject_sam">Reject SAM</span><kbd class="kbd justify-self-end">Esc</kbd>
+                <span class="text-base-content/50" data-i18n="sc_zoom">Zoom</span><kbd class="kbd justify-self-end">Scroll</kbd>
+                <span class="text-base-content/50" data-i18n="sc_pan">Pan</span><kbd class="kbd justify-self-end">Mid drag</kbd>
             </div>
             <div class="modal-action mt-5">
-                <form method="dialog"><button class="btn btn-sm btn-ghost">Close</button></form>
+                <form method="dialog"><button class="btn btn-sm btn-ghost" data-i18n="close_btn">Close</button></form>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>
