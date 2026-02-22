@@ -80,6 +80,20 @@
                 <button id="btn-reset-adjust" class="btn btn-ghost mt-1 text-base-content/50">Reset</button>
             </div>
 
+            <div class="divider my-0"></div>
+
+            <!-- Dataset coverage stats -->
+            <div id="stats-panel">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Coverage</span>
+                    <div class="flex items-center gap-1">
+                        <span id="stats-count" class="text-[10px] font-mono text-base-content/40">— / —</span>
+                        <button id="btn-refresh-stats" class="btn btn-ghost btn-square" style="width:16px;height:16px;min-height:0;padding:0;font-size:10px" title="Refresh stats">↻</button>
+                    </div>
+                </div>
+                <div id="stats-bars" class="flex flex-col gap-1"></div>
+            </div>
+
         </div>
     </aside>
 
@@ -100,20 +114,12 @@
         <!-- Top bar — simplified -->
         <header class="navbar bg-base-100 border-b border-base-300 min-h-0 px-3 py-2 gap-2 flex-wrap">
             <button id="btn-toggle-left" class="btn btn-ghost btn-square flex-shrink-0" title="Toggle sidebar">☰</button>
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-medium text-base-content/40 hidden sm:inline">Folder:</span>
-                <select id="folder-select" class="select select-bordered select-sm max-w-[140px]"></select>
-            </div>
+
             <div class="flex-1 max-w-xs min-w-[80px]">
                 <progress id="progress-fill" class="progress progress-primary w-full" value="0" max="100"></progress>
             </div>
             <span id="progress-text" class="text-xs font-medium text-base-content/60">0 / 0</span>
-            <div id="split-filter" class="join hidden">
-                <button class="join-item btn btn-sm btn-active" data-split="all">All</button>
-                <button class="join-item btn btn-sm" data-split="train">Train</button>
-                <button class="join-item btn btn-sm" data-split="val">Val</button>
-                <button class="join-item btn btn-sm" data-split="test">Test</button>
-            </div>
+
             <div id="status-msg" class="text-xs font-medium text-primary min-w-[60px]"></div>
             <button id="btn-toggle-right" class="btn btn-ghost btn-square flex-shrink-0" title="Toggle workflow panel">⊞</button>
         </header>
@@ -187,49 +193,11 @@
         </div>
         <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
 
-            <!-- Step 1: Dataset Split -->
+            <!-- Step 1: Augmentation -->
             <div>
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-1.5">
                         <span class="badge badge-neutral font-mono text-[10px]">1</span>
-                        <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Split</span>
-                    </div>
-                    <span id="split-done-badge" class="badge badge-success hidden">✓ done</span>
-                </div>
-                <!-- Section labels — widths updated by JS to match bar segments -->
-                <div class="flex text-center mb-1 overflow-hidden" style="min-height:38px">
-                    <div id="split-lbl-train" class="overflow-hidden flex-shrink-0" style="width:70%">
-                        <div class="text-[10px] font-semibold text-success leading-tight">Train</div>
-                        <div class="text-sm font-bold text-success font-mono leading-tight" id="split-count-train">-</div>
-                        <div class="text-[10px] text-success/60 font-mono leading-tight"><span id="split-train-val">70</span>%</div>
-                    </div>
-                    <div id="split-lbl-val" class="overflow-hidden flex-shrink-0" style="width:15%">
-                        <div class="text-[10px] font-semibold text-warning leading-tight">Val</div>
-                        <div class="text-sm font-bold text-warning font-mono leading-tight" id="split-count-val">-</div>
-                        <div class="text-[10px] text-warning/60 font-mono leading-tight"><span id="split-val-val">15</span>%</div>
-                    </div>
-                    <div id="split-lbl-test" class="overflow-hidden flex-1">
-                        <div class="text-[10px] font-semibold text-error leading-tight">Test</div>
-                        <div class="text-sm font-bold text-error font-mono leading-tight" id="split-count-test">-</div>
-                        <div class="text-[10px] text-error/60 font-mono leading-tight"><span id="split-test-val">15</span>%</div>
-                    </div>
-                </div>
-                <!-- Colored bar with two draggable handles -->
-                <div id="split-bar">
-                    <div id="split-handle-1" class="split-handle"></div>
-                    <div id="split-handle-2" class="split-handle"></div>
-                </div>
-                <div id="split-preview" class="text-[11px] text-base-content/30 mt-1.5 hidden"></div>
-                <button id="btn-generate-split" class="btn btn-sm btn-accent w-full mt-2">Generate Split</button>
-            </div>
-
-            <div class="divider my-0"></div>
-
-            <!-- Step 2: Augmentation -->
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-1.5">
-                        <span class="badge badge-neutral font-mono text-[10px]">2</span>
                         <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Augment</span>
                     </div>
                     <span id="aug-done-badge" class="badge badge-success hidden"></span>
@@ -270,6 +238,49 @@
                     <span class="text-xs">Labeled tiles only</span>
                 </label>
                 <button id="btn-augment" class="btn btn-sm btn-warning w-full mt-2">Run Augmentation</button>
+                <div id="aug-info" class="hidden flex items-center justify-between mt-1.5 px-1">
+                    <span class="text-xs text-base-content/50">Augmented tiles</span>
+                    <span id="aug-count" class="text-xs font-mono font-bold text-warning">0</span>
+                </div>
+                <button id="btn-clear-aug" class="btn btn-sm btn-ghost w-full mt-1 text-error/60 hover:text-error">Clear Augmented Tiles</button>
+            </div>
+
+            <div class="divider my-0"></div>
+
+            <!-- Step 2: Dataset Split -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="badge badge-neutral font-mono text-[10px]">2</span>
+                        <span class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Split</span>
+                    </div>
+                    <span id="split-done-badge" class="badge badge-success hidden">✓ done</span>
+                </div>
+                <!-- Section labels — widths updated by JS to match bar segments -->
+                <div class="flex text-center mb-1 overflow-hidden" style="min-height:38px">
+                    <div id="split-lbl-train" class="overflow-hidden flex-shrink-0" style="width:70%">
+                        <div class="text-[10px] font-semibold text-success leading-tight">Train</div>
+                        <div class="text-sm font-bold text-success font-mono leading-tight" id="split-count-train">-</div>
+                        <div class="text-[10px] text-success/60 font-mono leading-tight"><span id="split-train-val">70</span>%</div>
+                    </div>
+                    <div id="split-lbl-val" class="overflow-hidden flex-shrink-0" style="width:15%">
+                        <div class="text-[10px] font-semibold text-warning leading-tight">Val</div>
+                        <div class="text-sm font-bold text-warning font-mono leading-tight" id="split-count-val">-</div>
+                        <div class="text-[10px] text-warning/60 font-mono leading-tight"><span id="split-val-val">15</span>%</div>
+                    </div>
+                    <div id="split-lbl-test" class="overflow-hidden flex-1">
+                        <div class="text-[10px] font-semibold text-error leading-tight">Test</div>
+                        <div class="text-sm font-bold text-error font-mono leading-tight" id="split-count-test">-</div>
+                        <div class="text-[10px] text-error/60 font-mono leading-tight"><span id="split-test-val">15</span>%</div>
+                    </div>
+                </div>
+                <!-- Colored bar with two draggable handles -->
+                <div id="split-bar">
+                    <div id="split-handle-1" class="split-handle"></div>
+                    <div id="split-handle-2" class="split-handle"></div>
+                </div>
+                <div id="split-preview" class="text-[11px] text-base-content/30 mt-1.5 hidden"></div>
+                <button id="btn-generate-split" class="btn btn-sm btn-accent w-full mt-2">Generate Split</button>
             </div>
 
             <div class="divider my-0"></div>
@@ -291,8 +302,7 @@
                     <progress id="export-progress-bar" class="progress progress-primary w-full" value="0" max="100"></progress>
                     <div class="text-[11px] text-base-content/50 text-center mt-0.5" id="export-progress-text">0%</div>
                 </div>
-                <div class="text-[11px] text-base-content/30 mt-1 mb-2">Requires splits to be generated first</div>
-                <button id="btn-reexport-yolo" class="btn btn-sm btn-ghost w-full">Re-create Label Files</button>
+                <div class="text-[11px] text-base-content/30 mt-1">Requires splits to be generated first</div>
             </div>
 
         </div>

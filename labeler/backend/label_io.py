@@ -302,6 +302,34 @@ def mask_to_coco_annotations(mask: np.ndarray, image_id: int, start_ann_id: int)
     return annotations
 
 
+def get_class_stats(folder: str = "") -> dict:
+    """Aggregate pixel counts per class across all labeled tiles in a folder.
+
+    Returns:
+        labeled       — number of tiles with labels
+        total_pixels  — total pixels counted
+        class_pixels  — {class_index: pixel_count}
+    """
+    labeled = list_labeled_files(folder)
+    class_pixels: dict[int, int] = {}
+    total_pixels = 0
+
+    for filename in sorted(labeled):
+        mask = load_label(filename, folder)
+        if mask is None:
+            continue
+        total_pixels += int(mask.size)
+        unique, counts = np.unique(mask, return_counts=True)
+        for cls, cnt in zip(unique.tolist(), counts.tolist()):
+            class_pixels[int(cls)] = class_pixels.get(int(cls), 0) + int(cnt)
+
+    return {
+        "labeled": len(labeled),
+        "total_pixels": total_pixels,
+        "class_pixels": class_pixels,
+    }
+
+
 def delete_tile_files(filename: str, folder: str, tiles_dir: str, embeddings_dir: str) -> dict:
     """Delete a tile and all its associated files (NIR, label, YOLO, embedding)."""
     stem = os.path.splitext(filename)[0]

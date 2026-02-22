@@ -33,6 +33,7 @@ const App = {
         if (this.tiles.length > 0) {
             await this.navigateTo(0);
         }
+        this.loadStats();
     },
 
     async loadFolders() {
@@ -40,22 +41,6 @@ const App = {
         const data = await res.json();
         this.folders = data.folders;
         this.currentFolder = data.current;
-
-        const select = document.getElementById('folder-select');
-        const wrapper = select.closest('.flex');
-        select.innerHTML = '';
-        this.folders.forEach(folder => {
-            const opt = document.createElement('option');
-            opt.value = folder;
-            opt.textContent = folder || '(all tiles)';
-            select.appendChild(opt);
-        });
-        select.value = this.currentFolder;
-
-        // Hide folder selector when only one folder
-        if (wrapper) {
-            wrapper.style.display = this.folders.length > 1 ? '' : 'none';
-        }
     },
 
     async switchFolder(folder) {
@@ -84,53 +69,35 @@ const App = {
                 Canvas.loadMask(new Uint8Array(512 * 512));
                 this.setStatus('No tiles in this folder');
             }
+            this.loadStats();
         }
     },
 
     async loadTileList() {
-        const [tilesRes, splitsRes, progressRes] = await Promise.all([
+        this.setStatus('Loading tiles...');
+        // Two parallel requests — no N serial label checks needed
+        const [tilesRes, splitsRes] = await Promise.all([
             fetch('/api/tiles'),
             fetch('/api/splits'),
-            fetch('/api/progress'),
         ]);
-        const data = await tilesRes.json();
+        const data      = await tilesRes.json();
+        const splitsData = await splitsRes.json();
+
         this.tiles = data.tiles;
 
-        const splitsData = await splitsRes.json();
+        // labeled_files comes from the server in one shot — no per-tile fetch
+        this.labeledSet.clear();
+        for (const f of (data.labeled_files || [])) this.labeledSet.add(f);
+        this.updateProgress(data.labeled, data.total);
+
         this.splits = splitsData.splits || null;
         this.splitFilter = 'all';
-        this._updateSplitFilterUI();
-
-        const progressData = await progressRes.json();
-        this.updateProgress(progressData.labeled, progressData.total);
-
-        // Check which tiles are labeled
-        this.labeledSet.clear();
-        for (const t of this.tiles) {
-            const labelRes = await fetch(`/api/labels/${t}`);
-            const labelData = await labelRes.json();
-            if (labelData.exists) this.labeledSet.add(t);
-        }
 
         this.applyFilter();
+        if (this.updateSplitDisplay) this.updateSplitDisplay();
+        this.setStatus('Ready');
     },
 
-    _updateSplitFilterUI() {
-        const container = document.getElementById('split-filter');
-        if (!this.splits) {
-            container.classList.add('hidden');
-            return;
-        }
-        container.classList.remove('hidden');
-        // Update button counts
-        container.querySelectorAll('[data-split]').forEach(btn => {
-            const split = btn.dataset.split;
-            const count = split === 'all' ? this.tiles.length : (this.splits[split] || []).length;
-            btn.classList.toggle('btn-active', split === this.splitFilter);
-            btn.textContent = split === 'all' ? `All (${count})` :
-                split.charAt(0).toUpperCase() + split.slice(1) + ` (${count})`;
-        });
-    },
 
     applyFilter() {
         const unlabeledOnly = document.getElementById('filter-unlabeled').checked;
@@ -476,13 +443,44 @@ const App = {
             this.updateProgressFromServer();
             this.populateSelect();
             this.updateThumbnailLabeled(this.currentIndex);
+            this.loadStats();
         }
     },
 
     async updateProgressFromServer() {
-        const res = await fetch('/api/progress');
+        const res = await fetch('/api/tiles');
         const data = await res.json();
+        // Update labeled set in case it changed (e.g. after save)
+        for (const f of (data.labeled_files || [])) this.labeledSet.add(f);
         this.updateProgress(data.labeled, data.total);
+    },
+
+    async loadStats() {
+        try {
+            const res = await fetch('/api/stats');
+            if (!res.ok) return;
+            const data = await res.json();
+
+            document.getElementById('stats-count').textContent =
+                `${data.labeled} / ${data.total} labeled`;
+
+            const barsEl = document.getElementById('stats-bars');
+            barsEl.innerHTML = '';
+            data.classes.forEach(cls => {
+                if (cls.index === 0 && cls.pct === 0) return; // skip empty background
+                const [r, g, b] = cls.color;
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-1.5';
+                row.innerHTML = `
+                    <div class="w-2 h-2 rounded-full flex-shrink-0" style="background:rgb(${r},${g},${b})"></div>
+                    <span class="text-[10px] text-base-content/60 flex-1 truncate">${cls.name}</span>
+                    <div class="w-14 bg-base-200 rounded-full overflow-hidden flex-shrink-0" style="height:5px">
+                        <div class="h-full rounded-full" style="width:${cls.pct}%;background:rgb(${r},${g},${b})"></div>
+                    </div>
+                    <span class="text-[10px] font-mono text-base-content/40 w-7 text-right">${cls.pct}%</span>`;
+                barsEl.appendChild(row);
+            });
+        } catch (_) { /* stats are non-critical */ }
     },
 
     updateProgress(labeled, total) {
@@ -702,29 +700,17 @@ const App = {
         document.getElementById('filter-unlabeled').addEventListener('change', () =>
             this.applyFilter());
 
-        // Split filter buttons
-        document.querySelectorAll('#split-filter [data-split]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.splitFilter = btn.dataset.split;
-                document.querySelectorAll('#split-filter [data-split]').forEach(b =>
-                    b.classList.toggle('btn-active', b === btn));
-                this.applyFilter();
-            });
-        });
 
-        // Folder selection
-        document.getElementById('folder-select').addEventListener('change', (e) =>
-            this.switchFolder(e.target.value));
+
 
         // Dataset Split — two-handle drag bar
         const splitBar = document.getElementById('split-bar');
         const MIN_SEG  = 2; // minimum % per segment
 
-        const updateSplitDisplay = () => {
+        this.updateSplitDisplay = () => {
             const train = Math.round(this.splitH1);
             const val   = Math.round(this.splitH2 - this.splitH1);
             const test  = 100 - train - val;
-            const total = this.tiles.length;
 
             splitBar.style.background = `linear-gradient(to right,
                 #4ade80 ${this.splitH1}%,
@@ -741,20 +727,39 @@ const App = {
             document.getElementById('split-val-val').textContent   = val;
             document.getElementById('split-test-val').textContent  = test;
 
-            if (total > 0) {
-                const nTrain = Math.max(1, Math.round(total * train / 100));
-                const nVal   = Math.max(1, Math.round(total * val   / 100));
-                const nTest  = Math.max(0, total - nTrain - nVal);
-                document.getElementById('split-count-train').textContent = nTrain;
+            const preview = document.getElementById('split-preview');
+            const labeled = [...this.labeledSet];
+            const originals = labeled.filter(t => !t.includes('_aug_')).length;
+            const augCount  = labeled.filter(t =>  t.includes('_aug_')).length;
+
+            const augInfo = document.getElementById('aug-info');
+            if (augCount > 0) {
+                document.getElementById('aug-count').textContent = augCount;
+                augInfo.classList.remove('hidden');
+            } else {
+                augInfo.classList.add('hidden');
+            }
+
+            if (originals > 0) {
+                const nTrainOrig = Math.max(1, Math.round(originals * train / 100));
+                const nVal       = Math.max(1, Math.round(originals * val   / 100));
+                const nTest      = Math.max(0, originals - nTrainOrig - nVal);
+                document.getElementById('split-count-train').textContent = nTrainOrig + augCount;
                 document.getElementById('split-count-val').textContent   = nVal;
                 document.getElementById('split-count-test').textContent  = nTest;
-                const preview = document.getElementById('split-preview');
-                preview.textContent = `${nTrain} / ${nVal} / ${nTest} tiles`;
-                preview.classList.remove('hidden');
+            } else if (augCount > 0) {
+                document.getElementById('split-count-train').textContent = augCount;
+                document.getElementById('split-count-val').textContent   = 0;
+                document.getElementById('split-count-test').textContent  = 0;
+            } else {
+                document.getElementById('split-count-train').textContent = '-';
+                document.getElementById('split-count-val').textContent   = '-';
+                document.getElementById('split-count-test').textContent  = '-';
             }
+            preview.classList.add('hidden');
         };
 
-        updateSplitDisplay();
+        this.updateSplitDisplay();
 
         let _splitDrag = null;
         const _splitPct = (clientX) => {
@@ -769,7 +774,7 @@ const App = {
             } else {
                 this.splitH2 = Math.max(this.splitH1 + MIN_SEG, Math.min(100 - MIN_SEG, pct));
             }
-            updateSplitDisplay();
+            this.updateSplitDisplay();
         };
 
         document.getElementById('split-handle-1').addEventListener('mousedown',  (e) => { e.preventDefault(); _splitDrag = 'h1'; });
@@ -802,14 +807,10 @@ const App = {
                 const data = await res.json();
                 if (res.ok) {
                     this.splits = data.splits;
-                    this.splitFilter = 'all'; // always reset to "All" after regenerating
-                    // Update count labels with exact server-returned values
-                    document.getElementById('split-count-train').textContent = data.train;
-                    document.getElementById('split-count-val').textContent   = data.val;
-                    document.getElementById('split-count-test').textContent  = data.test;
+                    this.splitFilter = 'all';
                     document.getElementById('split-done-badge').classList.remove('hidden');
-                    this._updateSplitFilterUI();
                     this.applyFilter();
+                    await this.loadTileList();
                     this.toast(`Split: ${data.train} train / ${data.val} val / ${data.test} test`, 'success');
                 } else {
                     this.toast(`Split failed: ${data.detail || res.statusText}`);
@@ -821,22 +822,31 @@ const App = {
             }
         });
 
-        // Re-export all YOLO
-        document.getElementById('btn-reexport-yolo').addEventListener('click', async () => {
-            const btn = document.getElementById('btn-reexport-yolo');
-            btn.classList.add('loading');
+        // Refresh stats button
+        document.getElementById('btn-refresh-stats').addEventListener('click', () => this.loadStats());
+
+        // Clear augmented tiles
+        document.getElementById('btn-clear-aug').addEventListener('click', async () => {
+            const confirmed = await this.showConfirm(
+                'Delete all augmented tiles (_aug_*) and their labels?\nThis cannot be undone.',
+                'Clear Augmented Tiles'
+            );
+            if (!confirmed) return;
+            const btn = document.getElementById('btn-clear-aug');
             btn.disabled = true;
-            this.setStatus('Re-creating label files...');
+            this.setStatus('Clearing augmented tiles...');
             try {
-                const res = await fetch('/api/reexport-yolo', { method: 'POST' });
+                const res = await fetch('/api/augment', { method: 'DELETE' });
                 const data = await res.json();
                 if (res.ok) {
-                    this.toast(`Re-exported ${data.reexported} tiles (${data.formats.join(', ')})`, 'success');
+                    this.toast(`Removed ${data.deleted_tiles} augmented tile(s)`, 'success');
+                    document.getElementById('aug-done-badge').classList.add('hidden');
+                    await this.loadTileList();
+                    this.loadStats();
                 } else {
-                    this.toast(`Re-export failed: ${data.detail || res.statusText}`);
+                    this.toast(data.detail || 'Clear failed');
                 }
             } finally {
-                btn.classList.remove('loading');
                 btn.disabled = false;
                 this.setStatus('Ready');
             }
@@ -885,6 +895,7 @@ const App = {
                     augBadge.textContent = `+${data.created}`;
                     augBadge.classList.remove('hidden');
                     await this.loadTileList();
+                    this.loadStats();
                 } else {
                     this.toast(data.detail || 'Augmentation failed');
                 }

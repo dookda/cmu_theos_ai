@@ -8,7 +8,8 @@ from .config import TILES_DIR, LABELS_DIR, EMBEDDINGS_DIR, TILE_SIZE, load_class
 from .label_io import (
     load_label, save_label, mask_to_base64, base64_to_mask, list_labeled_files,
     mask_to_yolo_detect, mask_to_yolo_segment, save_yolo_detect, save_yolo_segment,
-    delete_tile_files, run_kmeans, augment_tile, mask_to_coco_annotations, VALID_TRANSFORMS,
+    delete_tile_files, run_kmeans, augment_tile, mask_to_coco_annotations,
+    get_class_stats, VALID_TRANSFORMS,
 )
 from .sam_engine import sam_engine
 
@@ -169,29 +170,52 @@ def get_splits():
 
 @app.post("/api/splits")
 def create_splits(req: SplitRequest):
-    """Generate train/val/test splits from all tiles in the current folder and save splits.json."""
+    """Generate train/val/test splits from labeled tiles only.
+
+    Only original (non-augmented) tiles are split randomly into train/val/test.
+    Augmented tiles (_aug_*) are always assigned to train to prevent evaluation leakage.
+    Unlabeled tiles are excluded entirely.
+    """
     import json, random
     if req.train_ratio <= 0 or req.val_ratio <= 0 or req.train_ratio + req.val_ratio >= 1.0:
         raise HTTPException(400, "train_ratio and val_ratio must be positive and sum to less than 1.0")
 
     td = _tiles_dir()
-    tiles = sorted([
-        f for f in os.listdir(td)
-        if f.endswith(".png") and "nir" not in f and os.path.isfile(os.path.join(td, f))
-    ])
-    if not tiles:
-        raise HTTPException(400, "No tiles found in current folder")
+    folder = _get_folder()
+    labeled = list_labeled_files(folder)
 
-    random.shuffle(tiles)
-    n = len(tiles)
+    # Only include labeled tiles that exist on disk; skip NIR sidecars
+    all_labeled = sorted([
+        f for f in os.listdir(td)
+        if f.endswith(".png") and "nir" not in f
+        and os.path.isfile(os.path.join(td, f))
+        and f in labeled
+    ])
+    if not all_labeled:
+        raise HTTPException(400, "No labeled tiles found. Label some tiles before generating splits.")
+
+    # Separate originals from augmented tiles
+    originals = [f for f in all_labeled if "_aug_" not in f]
+    aug_tiles  = [f for f in all_labeled if "_aug_" in f]
+
+    if not originals:
+        raise HTTPException(400, "No original labeled tiles found (only augmented tiles exist).")
+
+    # Randomly split originals into train / val / test
+    random.shuffle(originals)
+    n = len(originals)
     n_train = max(1, round(n * req.train_ratio))
     n_val   = max(1, round(n * req.val_ratio))
-    n_test  = max(0, n - n_train - n_val)
 
+    train_orig = originals[:n_train]
+    val_tiles  = originals[n_train:n_train + n_val]
+    test_tiles = originals[n_train + n_val:]
+
+    # Augmented tiles always go to train (no val/test contamination)
     splits = {
-        "train": tiles[:n_train],
-        "val":   tiles[n_train:n_train + n_val],
-        "test":  tiles[n_train + n_val:],
+        "train": sorted(train_orig + aug_tiles),
+        "val":   sorted(val_tiles),
+        "test":  sorted(test_tiles),
     }
 
     splits_path = os.path.join(td, "splits.json")
@@ -200,7 +224,7 @@ def create_splits(req: SplitRequest):
 
     return {
         "status": "ok",
-        "total": n,
+        "total": len(all_labeled),
         "train": len(splits["train"]),
         "val":   len(splits["val"]),
         "test":  len(splits["test"]),
@@ -214,16 +238,18 @@ def create_splits(req: SplitRequest):
 def get_tiles():
     td = _tiles_dir()
     if not os.path.isdir(td):
-        return {"tiles": [], "total": 0, "labeled": 0}
+        return {"tiles": [], "total": 0, "labeled": 0, "labeled_files": []}
     tile_files = sorted([
         f for f in os.listdir(td)
         if f.endswith(".png") and "nir" not in f
     ])
     labeled = list_labeled_files(_get_folder())
+    labeled_in_tiles = labeled & set(tile_files)
     return {
         "tiles": tile_files,
         "total": len(tile_files),
-        "labeled": len(labeled & set(tile_files)),
+        "labeled": len(labeled_in_tiles),
+        "labeled_files": sorted(labeled_in_tiles),
     }
 
 
@@ -251,7 +277,13 @@ def delete_tile(filename: str):
 
 @app.post("/api/upload-tiles")
 async def upload_tiles(files: list[UploadFile] = File(...)):
-    """Upload one or more tile images (PNG/JPG) to the current tiles directory."""
+    """Upload one or more tile images (PNG/JPG) to the current tiles directory.
+
+    All images are converted to PNG and resized to TILE_SIZE×TILE_SIZE.
+    """
+    import io as _io
+    from PIL import Image as PILImage
+
     td = _tiles_dir()
     os.makedirs(td, exist_ok=True)
     allowed = {".png", ".jpg", ".jpeg"}
@@ -261,11 +293,20 @@ async def upload_tiles(files: list[UploadFile] = File(...)):
         if ext not in allowed:
             skipped.append(f.filename)
             continue
-        dest = os.path.join(td, os.path.basename(f.filename))
+        # Always save as .png so the tile listing can find it
+        stem = os.path.splitext(os.path.basename(f.filename))[0]
+        dest_name = f"{stem}.png"
+        dest = os.path.join(td, dest_name)
         data = await f.read()
-        with open(dest, "wb") as fp:
-            fp.write(data)
-        uploaded.append(os.path.basename(f.filename))
+        try:
+            img = PILImage.open(_io.BytesIO(data)).convert("RGB")
+            if img.size != (TILE_SIZE, TILE_SIZE):
+                img = img.resize((TILE_SIZE, TILE_SIZE), PILImage.LANCZOS)
+            img.save(dest, format="PNG")
+        except Exception as e:
+            skipped.append(f.filename)
+            continue
+        uploaded.append(dest_name)
     return {"uploaded": uploaded, "skipped": skipped}
 
 
@@ -305,6 +346,67 @@ def augment_dataset(req: AugmentRequest):
             continue
 
     return {"augmented": len(candidates), "created": len(all_created), "files": all_created}
+
+
+@app.delete("/api/augment")
+def clear_augmentation():
+    """Delete all augmented tiles (_aug_*) and their associated files from the current folder."""
+    folder = _get_folder()
+    td = _tiles_dir()
+
+    aug_tiles = [
+        f for f in os.listdir(td)
+        if f.endswith(".png") and "_aug_" in f and os.path.isfile(os.path.join(td, f))
+    ] if os.path.isdir(td) else []
+
+    deleted_tiles = 0
+    deleted_files = 0
+    for filename in aug_tiles:
+        try:
+            result = delete_tile_files(filename, folder, td, EMBEDDINGS_DIR)
+            deleted_tiles += 1
+            deleted_files += len(result["deleted"])
+        except Exception:
+            continue
+
+    return {"status": "ok", "deleted_tiles": deleted_tiles, "deleted_files": deleted_files}
+
+
+# --- Stats endpoint ---
+
+@app.get("/api/stats")
+def get_stats():
+    """Return per-class pixel distribution across all labeled tiles in the current folder."""
+    folder = _get_folder()
+    td = _tiles_dir()
+    classes = load_classes()
+
+    raw = get_class_stats(folder)
+    total_px = raw["total_pixels"]
+
+    n_total = sum(
+        1 for f in os.listdir(td)
+        if f.endswith(".png") and "nir" not in f and os.path.isfile(os.path.join(td, f))
+    ) if os.path.isdir(td) else 0
+
+    result = []
+    for c in classes:
+        idx = c["index"]
+        px = raw["class_pixels"].get(idx, 0)
+        pct = round(px / total_px * 100, 1) if total_px > 0 else 0.0
+        result.append({
+            "index": idx,
+            "name": c["name"],
+            "color": c["color"],
+            "pixels": px,
+            "pct": pct,
+        })
+
+    return {
+        "classes": result,
+        "labeled": raw["labeled"],
+        "total": n_total,
+    }
 
 
 # --- Label endpoints ---
